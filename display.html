@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MoonPD Board</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<style>
+  html,body{height:100%}
+  body{background:#0b0f1a;color:#f4f6fb;font-family:'Pretendard',system-ui,-apple-system,'Segoe UI',sans-serif}
+  .cell-tier{font-variant-numeric:tabular-nums}
+  @keyframes eq{0%,100%{height:12px}50%{height:44px}}
+  .eqbar{width:9px;background:#7aa2ff;border-radius:4px;animation:eq .8s ease-in-out infinite}
+</style>
+</head>
+<body class="overflow-hidden">
+  <!-- Start overlay (one user gesture to unlock audio) -->
+  <div id="startOverlay" class="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-[#0b0f1a]">
+    <div class="text-4xl font-bold tracking-tight mb-2">MoonPD</div>
+    <div class="text-slate-400 mb-8">화면을 시작하려면 아래 버튼을 누르세요</div>
+    <button id="startBtn" class="px-12 py-4 rounded-2xl bg-indigo-500 hover:bg-indigo-400 text-lg font-semibold">시작하기</button>
+  </div>
+
+  <!-- Persistent scoreboard (전광판) -->
+  <div id="scoreboard" class="fixed top-0 inset-x-0 z-50 flex flex-wrap items-center gap-2 px-4 py-2 bg-[#070b14]/95 border-b border-slate-800 backdrop-blur"></div>
+
+  <main class="h-screen flex flex-col pt-16 px-6 pb-6 gap-4">
+    <header class="flex items-center justify-between">
+      <h1 id="roundTitle" class="text-3xl font-bold tracking-tight">라운드</h1>
+    </header>
+    <section class="flex-1 min-h-0">
+      <div id="board" class="h-full grid gap-3"></div>
+    </section>
+  </main>
+
+  <!-- Question overlay (scoreboard stays above via z-index) -->
+  <div id="qOverlay" class="fixed inset-0 z-40 hidden items-center justify-center bg-black/90 backdrop-blur">
+    <div class="w-full max-w-5xl mx-auto px-8 pt-20 pb-8 text-center">
+      <div id="qMeta" class="text-indigo-300 text-xl font-semibold mb-4"></div>
+      <div id="qBody" class="flex items-center justify-center min-h-[46vh]"></div>
+      <div id="qAnswer" class="mt-6 text-5xl font-bold text-emerald-300 hidden"></div>
+    </div>
+  </div>
+
+  <div id="ytHolder" style="position:fixed;left:-9999px;top:-9999px;width:320px;height:180px"></div>
+
+  <script src="js/firebase.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/store.js"></script>
+  <script>
+  (function(){
+    var DATA=window.MOONPD_DATA, TIERS=DATA.pointTiers, state={};
+    var ytPlayer=null, ytReady=false, pauseTimer=null;
+
+    function roundById(id){ return DATA.rounds.find(function(r){return r.id===id;})||DATA.rounds[0]; }
+    function findQuestion(cellKey){
+      if(!cellKey) return null; var p=cellKey.split("|"); var r=roundById(p[0]);
+      var cat=(r.categories||[]).find(function(c){return c.id===p[1];}); if(!cat) return null;
+      var q=cat.questions[p[2]]; if(!q) return null; return {round:r,cat:cat,points:p[2],q:q};
+    }
+    function teamColor(id){ return (state.teams&&state.teams[id]&&state.teams[id].color)||"#64748b"; }
+    function esc(s){ return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+
+    function renderScores(){
+      var wrap=document.getElementById("scoreboard"); var teams=state.teams||{};
+      var arr=Object.keys(teams).map(function(id){return Object.assign({id:id},teams[id]);});
+      arr.sort(function(a,b){return (b.score||0)-(a.score||0)||(a.ts||0)-(b.ts||0);});
+      wrap.innerHTML="";
+      if(!arr.length){ wrap.innerHTML='<span class="text-slate-600 text-sm">팀 없음</span>'; return; }
+      arr.forEach(function(t){
+        var chip=document.createElement("div");
+        chip.className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800/70";
+        chip.innerHTML='<span style="width:16px;height:16px;border-radius:5px;background:'+(t.color||"#64748b")+'"></span>'+
+          '<span class="font-semibold">'+esc(t.name||"팀")+'</span>'+
+          '<span class="text-xl font-bold tabular-nums">'+(t.score||0)+'</span>';
+        wrap.appendChild(chip);
+      });
+    }
+
+    function renderBoard(){
+      var r=roundById(state.activeRound);
+      document.getElementById("roundTitle").textContent=r.name;
+      var board=document.getElementById("board"); var cats=r.categories||[];
+      board.style.gridTemplateColumns="repeat("+Math.max(cats.length,1)+",minmax(0,1fr))";
+      board.innerHTML="";
+      cats.forEach(function(cat){
+        var col=document.createElement("div"); col.className="flex flex-col gap-3 min-h-0";
+        var head=document.createElement("div");
+        head.className="text-center font-semibold text-lg py-3 rounded-xl bg-slate-800/70"; head.textContent=cat.name;
+        col.appendChild(head);
+        TIERS.forEach(function(pt){
+          var key=r.id+"|"+cat.id+"|"+pt; var owner=state.owners&&state.owners[key];
+          var cur=state.current&&state.current.cellKey===key;
+          var cell=document.createElement("div");
+          cell.className="flex-1 flex items-center justify-center rounded-xl text-3xl font-bold cell-tier transition";
+          if(owner){ cell.style.background=teamColor(owner); cell.style.color="#0b0f1a"; cell.textContent="✓"; }
+          else{ cell.className+=" bg-slate-800/50 border border-slate-700"; cell.style.color="#c7d2fe"; cell.textContent=pt; }
+          if(cur) cell.className+=" ring-4 ring-indigo-400";
+          col.appendChild(cell);
+        });
+        board.appendChild(col);
+      });
+    }
+
+    var lastCellKey="", lastReveal=-1;
+    function renderCurrent(){
+      var cur=state.current||{}; var ov=document.getElementById("qOverlay");
+      if(!cur.cellKey){ ov.classList.add("hidden"); ov.classList.remove("flex"); stopMusic(); lastCellKey=""; lastReveal=-1; return; }
+      var info=findQuestion(cur.cellKey); if(!info) return;
+      ov.classList.remove("hidden"); ov.classList.add("flex");
+      document.getElementById("qMeta").textContent=info.cat.name+" · "+info.points+"점";
+      var body=document.getElementById("qBody"), ansEl=document.getElementById("qAnswer");
+      if(cur.cellKey!==lastCellKey){
+        body.innerHTML=""; var q=info.q;
+        if(q.type==="music"){ body.appendChild(musicView()); setupMusic(q); }
+        else if(q.type==="text"){
+          var d=document.createElement("div"); d.className="text-slate-200";
+          d.innerHTML='<div class="text-2xl text-slate-400 mb-4">초성 힌트</div>'+
+            '<div style="font-size:9rem;line-height:1" class="font-black tracking-widest text-indigo-200">'+esc(q.hint||"")+'</div>';
+          body.appendChild(d);
+        }else{
+          var img=document.createElement("img"); img.src=q.image||"";
+          img.className="max-h-[58vh] max-w-full rounded-2xl object-contain";
+          img.onerror=function(){ body.innerHTML='<div class="text-slate-500 text-xl">이미지 준비 중 ('+esc(q.image||"")+')</div>'; };
+          body.appendChild(img);
+        }
+      }
+      if(info.q.type==="music" && cur.reveal!==lastReveal) playReveal(info.q, cur.reveal);
+      if(cur.answer){ ansEl.textContent="정답 : "+((info.q.answer&&info.q.answer[0])||""); ansEl.classList.remove("hidden"); }
+      else ansEl.classList.add("hidden");
+      lastCellKey=cur.cellKey; lastReveal=cur.reveal;
+    }
+
+    function musicView(){
+      var d=document.createElement("div"); d.className="flex flex-col items-center gap-6";
+      d.innerHTML='<div class="text-2xl text-slate-400">음악 재생</div>'+
+        '<div class="flex items-end gap-2 h-12">'+
+        '<div class="eqbar" style="animation-delay:0s"></div><div class="eqbar" style="animation-delay:.15s"></div>'+
+        '<div class="eqbar" style="animation-delay:.3s"></div><div class="eqbar" style="animation-delay:.45s"></div>'+
+        '<div class="eqbar" style="animation-delay:.6s"></div></div>'+
+        '<div id="revealLabel" class="text-xl text-indigo-300"></div>';
+      return d;
+    }
+    function setupMusic(q){ if(!ytReady)return; try{ ytPlayer.loadVideoById({videoId:q.youtubeId,startSeconds:q.start||0}); ytPlayer.pauseVideo(); }catch(e){} }
+    function playReveal(q,reveal){
+      if(!ytReady)return; clearTimeout(pauseTimer);
+      var label=document.getElementById("revealLabel"); var dur=0;
+      if(reveal===1)dur=1000; else if(reveal===2)dur=5000; else if(reveal>=3)dur=0;
+      if(reveal<=0){ try{ytPlayer.pauseVideo();}catch(e){} if(label)label.textContent=""; return; }
+      try{ ytPlayer.seekTo(q.start||0,true); ytPlayer.playVideo(); }catch(e){}
+      if(label) label.textContent=reveal===1?"1초":reveal===2?"5초":"전체 재생";
+      if(dur>0) pauseTimer=setTimeout(function(){ try{ytPlayer.pauseVideo();}catch(e){} },dur);
+    }
+    function stopMusic(){ clearTimeout(pauseTimer); if(ytReady){ try{ytPlayer.pauseVideo();}catch(e){} } }
+    window.onYouTubeIframeAPIReady=function(){ ytPlayer=new YT.Player("ytHolder",{height:"180",width:"320",playerVars:{controls:0,disablekb:1,modestbranding:1,rel:0},events:{onReady:function(){ytReady=true;}}}); };
+    function loadYT(){ var s=document.createElement("script"); s.src="https://www.youtube.com/iframe_api"; document.head.appendChild(s); }
+
+    document.getElementById("startBtn").addEventListener("click",function(){
+      document.getElementById("startOverlay").remove(); loadYT();
+      MoonStore.subscribe(function(s){ state=s||{}; renderScores(); renderBoard(); renderCurrent(); });
+    });
+  })();
+  </script>
+</body>
+</html>

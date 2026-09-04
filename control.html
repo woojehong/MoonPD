@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>MoonPD Control</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<style>
+  body{background:#0b0f1a;color:#f4f6fb;font-family:'Pretendard',system-ui,-apple-system,'Segoe UI',sans-serif}
+  .btn{padding:.7rem 1rem;border-radius:.9rem;font-weight:600}
+  .tap{-webkit-tap-highlight-color:transparent}
+</style>
+</head>
+<body class="tap">
+<main class="max-w-md mx-auto p-4 pb-40 flex flex-col gap-5">
+  <header class="flex items-center justify-between pt-2">
+    <h1 class="text-lg font-bold tracking-tight">MoonPD 관제센터</h1>
+    <span id="conn" class="text-xs text-slate-500">연결 중…</span>
+  </header>
+
+  <!-- Round selector -->
+  <section>
+    <div class="text-xs text-slate-400 mb-2">라운드</div>
+    <div id="roundSel" class="grid grid-cols-3 gap-2"></div>
+  </section>
+
+  <!-- Teams -->
+  <section>
+    <div class="flex items-center justify-between mb-2">
+      <div class="text-xs text-slate-400">팀 (최대 8팀)</div>
+      <button id="clearScores" class="text-xs text-slate-500 underline">점수 초기화</button>
+    </div>
+    <div id="teamList" class="flex flex-col gap-2 mb-3"></div>
+    <div class="flex items-center gap-2">
+      <input id="teamName" placeholder="팀 이름" maxlength="14"
+        class="flex-1 bg-slate-800 rounded-xl px-3 py-2 outline-none text-sm" />
+      <button id="addTeam" class="btn bg-indigo-500 text-sm">추가</button>
+    </div>
+    <div id="palette" class="flex flex-wrap gap-2 mt-2"></div>
+  </section>
+
+  <!-- Board -->
+  <section>
+    <div class="text-xs text-slate-400 mb-2">보드 · 칸을 눌러 문제 열기</div>
+    <div id="miniBoard" class="flex gap-2 overflow-x-auto pb-1"></div>
+  </section>
+</main>
+
+<!-- Current cell control (sticky) -->
+<div id="panel" class="fixed bottom-0 inset-x-0 z-30 hidden">
+  <div class="max-w-md mx-auto m-3 p-4 rounded-2xl bg-slate-800 shadow-2xl border border-slate-700">
+    <div class="flex items-center justify-between mb-1">
+      <div id="pMeta" class="text-sm font-semibold text-indigo-300"></div>
+      <button id="pClose" class="text-xs text-slate-400 underline">닫기</button>
+    </div>
+    <div id="pAnswer" class="text-xs text-slate-400 mb-3"></div>
+    <div id="pMusic" class="grid grid-cols-3 gap-2 mb-2 hidden">
+      <button data-r="1" class="btn bg-slate-700 text-sm">1초</button>
+      <button data-r="2" class="btn bg-slate-700 text-sm">5초</button>
+      <button data-r="3" class="btn bg-slate-700 text-sm">전체</button>
+    </div>
+    <button id="pToggleAns" class="btn bg-emerald-600 w-full text-sm mb-3">정답 공개</button>
+    <div class="text-xs text-slate-400 mb-1">정답 팀 지정 (점수 가산 + 칸 색칠)</div>
+    <div id="pTeams" class="grid grid-cols-2 gap-2 mb-2"></div>
+    <button id="pClear" class="btn bg-slate-700 w-full text-xs">이 칸 점령 해제</button>
+  </div>
+</div>
+
+<!-- Footer actions -->
+<div class="fixed bottom-0 inset-x-0 z-20">
+  <div class="max-w-md mx-auto px-3 pb-3 flex gap-2">
+    <button id="undo" class="btn bg-slate-700 flex-1 text-sm">실행취소</button>
+    <button id="resetBoard" class="btn bg-rose-900/70 flex-1 text-sm">보드 초기화</button>
+  </div>
+</div>
+
+<script src="js/firebase.js"></script>
+<script src="js/data.js"></script>
+<script src="js/store.js"></script>
+<script>
+(function(){
+  var DATA=window.MOONPD_DATA, TIERS=DATA.pointTiers, state={}, selKey="";
+  var PALETTE=["#ef4444","#f97316","#eab308","#22c55e","#14b8a6","#3b82f6","#8b5cf6","#ec4899"];
+  var pendingColor=PALETTE[0];
+
+  function roundById(id){ return DATA.rounds.find(function(r){return r.id===id;})||DATA.rounds[0]; }
+  function activeRound(){ return roundById(state.activeRound); }
+  function findQuestion(key){ var p=key.split("|"); var r=roundById(p[0]); var c=(r.categories||[]).find(function(x){return x.id===p[1];}); if(!c)return null; var q=c.questions[p[2]]; if(!q)return null; return {r:r,c:c,points:p[2],q:q}; }
+  function esc(s){ return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+
+  // rounds
+  function renderRounds(){
+    var el=document.getElementById("roundSel"); el.innerHTML="";
+    DATA.rounds.forEach(function(r){
+      var b=document.createElement("button");
+      b.className="btn text-sm "+(state.activeRound===r.id?"bg-indigo-500":"bg-slate-800");
+      b.textContent=r.name.replace(/·.*/,"").trim()||r.id;
+      b.onclick=function(){ MoonStore.setActiveRound(r.id); };
+      el.appendChild(b);
+    });
+  }
+  // teams
+  function usedColors(){ var t=state.teams||{}; return Object.keys(t).map(function(k){return t[k].color;}); }
+  function renderPalette(){
+    var el=document.getElementById("palette"); el.innerHTML=""; var used=usedColors();
+    PALETTE.forEach(function(c){
+      var d=document.createElement("button");
+      d.style.background=c; d.style.width="30px"; d.style.height="30px"; d.style.borderRadius="9px";
+      d.className=(pendingColor===c?"ring-2 ring-white ":"")+(used.indexOf(c)>=0?"opacity-30":"");
+      d.onclick=function(){ pendingColor=c; renderPalette(); };
+      el.appendChild(d);
+    });
+  }
+  function renderTeams(){
+    var el=document.getElementById("teamList"); var t=state.teams||{}; el.innerHTML="";
+    var ids=Object.keys(t).sort(function(a,b){return (t[a].ts||0)-(t[b].ts||0);});
+    ids.forEach(function(id){
+      var row=document.createElement("div");
+      row.className="flex items-center gap-2 bg-slate-800 rounded-xl px-3 py-2";
+      row.innerHTML='<span style="width:16px;height:16px;border-radius:5px;background:'+(t[id].color||"#64748b")+'"></span>'+
+        '<span class="flex-1 text-sm font-semibold">'+esc(t[id].name||"팀")+'</span>'+
+        '<span class="text-sm tabular-nums w-12 text-right">'+(t[id].score||0)+'</span>';
+      var del=document.createElement("button"); del.textContent="✕"; del.className="text-slate-500 text-xs pl-2";
+      del.onclick=function(){ if(confirm("이 팀을 삭제할까요?")) MoonStore.removeTeam(id); };
+      row.appendChild(del); el.appendChild(row);
+    });
+    var atMax=ids.length>=8;
+    document.getElementById("addTeam").disabled=atMax;
+    document.getElementById("addTeam").style.opacity=atMax?.4:1;
+  }
+  // mini board
+  function renderMiniBoard(){
+    var r=activeRound(); var el=document.getElementById("miniBoard"); el.innerHTML="";
+    (r.categories||[]).forEach(function(cat){
+      var col=document.createElement("div"); col.className="flex flex-col gap-2 shrink-0" ; col.style.width="92px";
+      var h=document.createElement("div"); h.className="text-center text-xs font-semibold bg-slate-800 rounded-lg py-2 truncate"; h.textContent=cat.name; col.appendChild(h);
+      TIERS.forEach(function(pt){
+        var key=r.id+"|"+cat.id+"|"+pt; var owner=state.owners&&state.owners[key];
+        var b=document.createElement("button"); b.className="rounded-lg py-3 text-sm font-bold";
+        if(owner){ b.style.background=(state.teams&&state.teams[owner]&&state.teams[owner].color)||"#64748b"; b.style.color="#0b0f1a"; b.textContent="✓"; }
+        else{ b.className+=" bg-slate-800 border border-slate-700 text-indigo-200"; b.textContent=pt; }
+        if(state.current&&state.current.cellKey===key) b.className+=" ring-2 ring-indigo-400";
+        b.onclick=function(){ MoonStore.openCell(key); };
+        col.appendChild(b);
+      });
+      el.appendChild(col);
+    });
+  }
+  // panel
+  function renderPanel(){
+    var cur=state.current||{}; var panel=document.getElementById("panel");
+    if(!cur.cellKey){ panel.classList.add("hidden"); return; }
+    var info=findQuestion(cur.cellKey); if(!info){ panel.classList.add("hidden"); return; }
+    panel.classList.remove("hidden"); selKey=cur.cellKey;
+    document.getElementById("pMeta").textContent=info.c.name+" · "+info.points+"점 ["+info.q.type+"]";
+    document.getElementById("pAnswer").textContent="정답: "+((info.q.answer&&info.q.answer[0])||"")+(info.q.hint?(" / 힌트 "+info.q.hint):"");
+    document.getElementById("pMusic").classList.toggle("hidden", info.q.type!=="music");
+    document.getElementById("pToggleAns").textContent=cur.answer?"정답 숨기기":"정답 공개";
+    var t=state.teams||{}; var pt=document.getElementById("pTeams"); pt.innerHTML="";
+    Object.keys(t).sort(function(a,b){return (t[a].ts||0)-(t[b].ts||0);}).forEach(function(id){
+      var b=document.createElement("button"); b.className="btn text-sm"; b.style.background=t[id].color||"#64748b"; b.style.color="#0b0f1a";
+      b.textContent=t[id].name||"팀";
+      b.onclick=function(){ MoonStore.award(cur.cellKey, id); };
+      pt.appendChild(b);
+    });
+    if(!Object.keys(t).length){ pt.innerHTML='<div class="text-xs text-slate-500 col-span-2">먼저 팀을 추가하세요</div>'; }
+  }
+
+  // events
+  document.getElementById("addTeam").onclick=function(){
+    var name=document.getElementById("teamName").value.trim(); if(!name)return;
+    var used=usedColors(); var color=pendingColor;
+    if(used.indexOf(color)>=0){ color=PALETTE.find(function(c){return used.indexOf(c)<0;})||pendingColor; }
+    MoonStore.addTeam(name, color); document.getElementById("teamName").value="";
+    pendingColor=PALETTE.find(function(c){return usedColors().indexOf(c)<0;})||PALETTE[0];
+  };
+  document.getElementById("clearScores").onclick=function(){ if(confirm("모든 팀 점수와 보드 점령을 0으로 초기화할까요?")) MoonStore.resetScores(); };
+  document.getElementById("undo").onclick=function(){ MoonStore.undo(); };
+  document.getElementById("resetBoard").onclick=function(){ if(confirm("보드 점령/기록을 모두 초기화할까요? (팀은 유지)")) MoonStore.resetAll(); };
+  document.getElementById("pClose").onclick=function(){ MoonStore.closeCell(); };
+  document.getElementById("pClear").onclick=function(){ if(selKey) MoonStore.clearCell(selKey); };
+  document.getElementById("pToggleAns").onclick=function(){ MoonStore.showAnswer(!(state.current&&state.current.answer)); };
+  document.querySelectorAll("#pMusic button").forEach(function(b){ b.onclick=function(){ MoonStore.setReveal(parseInt(b.dataset.r,10)); }; });
+
+  MoonStore.subscribe(function(s){ state=s||{}; document.getElementById("conn").textContent="연결됨"; document.getElementById("conn").className="text-xs text-emerald-400";
+    renderRounds(); renderPalette(); renderTeams(); renderMiniBoard(); renderPanel(); });
+})();
+</script>
+</body>
+</html>
