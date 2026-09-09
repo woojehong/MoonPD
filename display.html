@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MoonPD Board</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  html,body{height:100%}
+  body{color:#2a1c10;font-family:'Gaegu','Pretendard',system-ui,sans-serif;
+    background:#9c6a37;
+    background-image:
+      repeating-linear-gradient(90deg, rgba(0,0,0,.10) 0 1px, transparent 1px 118px),
+      repeating-linear-gradient(90deg, rgba(255,255,255,.05) 0 1px, transparent 1px 26px),
+      linear-gradient(180deg,#b9814a,#8f6231);}
+  #board{gap:10px;background:#f0e7cf;padding:16px;border-radius:14px;box-shadow:0 14px 40px rgba(0,0,0,.45);
+    margin:auto;max-width:min(96vw,960px);width:100%;align-content:start}
+  .hcell{display:flex;align-items:center;justify-content:center;background:#fdfaf0;border:1px solid #d8cdb0;border-radius:6px;min-height:60px}
+  .hcell.pts{font-size:clamp(1.4rem,3vw,2.6rem);font-weight:700;color:#222}
+  .hcell.corner{font-size:clamp(.9rem,1.8vw,1.4rem);color:#b91c1c;font-weight:700}
+  .hcell.bonus{color:#b45309;background:#fff5da;border-color:#e6c675;font-size:clamp(1rem,2vw,1.7rem);font-weight:700}
+  .lcell{display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.05;
+    background:#fdfaf0;border:3px solid #dc2626;border-radius:6px;color:#111;
+    font-size:clamp(1rem,2vw,1.7rem);font-weight:700;padding:.2rem .3rem}
+  .cell{position:relative;aspect-ratio:1/1}
+  .cell .back{position:absolute;inset:0;border-radius:8px;display:flex;align-items:center;justify-content:center;
+    font-size:2.4rem;color:#101010;font-weight:700;box-shadow:inset 0 0 0 3px rgba(0,0,0,.10)}
+  .cell .postit{position:absolute;inset:0;background:#fb469b;border-radius:5px;
+    box-shadow:0 7px 12px rgba(0,0,0,.28), inset 0 -10px 16px rgba(0,0,0,.10);
+    transition:transform .75s cubic-bezier(.3,.7,.35,1),opacity .75s ease;transform-origin:top center;backface-visibility:hidden}
+  .cell .postit::after{content:"";position:absolute;left:50%;top:-7px;transform:translateX(-50%) rotate(-1.5deg);
+    width:44%;height:15px;background:rgba(255,255,255,.4);border-radius:2px;box-shadow:0 1px 2px rgba(0,0,0,.15)}
+  .cell .postit.bonus{background:#f5c542}
+  .cell .postit.peel{transform:perspective(760px) rotateX(108deg) translateY(-34%) scale(.98);opacity:0}
+  .cell .postit.gone{display:none}
+  #qClue{font-weight:800;color:#ffe28a;text-shadow:0 4px 16px rgba(0,0,0,.6)}
+  #qClue.big{font-size:clamp(3rem,13vw,13rem);line-height:1.05}
+  #qClue.small{font-size:clamp(1.4rem,4vw,3rem);margin-bottom:1.2rem}
+  #qAnswer{position:absolute;inset:0;align-items:center;justify-content:center;pointer-events:none}
+  #qAnswer .ans{font-size:clamp(3rem,12vw,11rem);font-weight:900;color:#fff;-webkit-text-stroke:4px #000;
+    text-shadow:0 6px 22px rgba(0,0,0,.95),0 0 10px #000;background:rgba(0,0,0,.30);border-radius:20px;padding:.1em .35em}
+  @keyframes eq{0%,100%{height:14px}50%{height:46px}}
+  .eqbar{width:10px;background:#fb469b;border-radius:5px;animation:eq .8s ease-in-out infinite}
+</style>
+</head>
+<body class="overflow-hidden">
+  <div id="startOverlay" class="fixed inset-0 z-[60] flex flex-col items-center justify-center" style="background:#8f6231">
+    <div class="text-5xl mb-2" style="font-weight:700">MoonPD</div>
+    <div class="mb-8 text-white/80">화면을 시작하려면 아래 버튼을 누르세요</div>
+    <button id="startBtn" class="px-12 py-4 rounded-2xl text-lg font-bold" style="background:#fb469b;color:#fff">시작하기</button>
+  </div>
+
+  <div id="scoreboard" class="fixed top-0 inset-x-0 z-50 flex flex-wrap items-center gap-2 px-4 py-2 bg-black/70 backdrop-blur text-white" style="font-family:'Pretendard',system-ui,sans-serif"></div>
+
+  <main class="h-screen flex flex-col pt-16 px-6 pb-6 gap-3">
+    <header class="flex items-center justify-between">
+      <h1 id="roundTitle" class="text-4xl text-white drop-shadow" style="font-weight:700">라운드</h1>
+    </header>
+    <section class="flex-1 min-h-0 overflow-auto flex items-center justify-center">
+      <div id="board" class="grid"></div>
+    </section>
+  </main>
+
+  <div id="qOverlay" class="fixed inset-0 z-40 hidden items-center justify-center bg-black/90 backdrop-blur" style="font-family:'Pretendard',system-ui,sans-serif">
+    <div class="w-full max-w-6xl mx-auto px-8 pt-20 pb-8 text-center text-white flex flex-col items-center justify-center" style="min-height:100vh">
+      <div id="qMeta" class="text-pink-300 text-2xl font-semibold mb-4"></div>
+      <div id="qClue" class="hidden"></div>
+      <div id="qStage" class="relative w-full flex items-center justify-center" style="min-height:52vh">
+        <div id="qBody" class="flex items-center justify-center w-full"></div>
+        <div id="qAnswer" style="display:none"><span class="ans"></span></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="ytHolder" style="position:fixed;left:-9999px;top:-9999px;width:320px;height:180px"></div>
+
+  <script src="js/firebase.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/store.js"></script>
+  <script>
+  (function(){
+    var DATA=window.MOONPD_DATA, TIERS=DATA.pointTiers, COLS=TIERS.concat(["bonus"]), state={}, prevOwners={}, prevUsed={};
+    var ytPlayer=null, ytReady=false, pauseTimer=null;
+
+    function roundById(id){ return DATA.rounds.find(function(r){return r.id===id;})||DATA.rounds[0]; }
+    function findQuestion(cellKey){
+      if(!cellKey) return null; var p=cellKey.split("|"); var r=roundById(p[0]);
+      var cat=(r.categories||[]).find(function(c){return c.id===p[1];}); if(!cat) return null;
+      var q=cat.questions[p[2]]; if(!q) return null; return {round:r,cat:cat,points:p[2],q:q};
+    }
+    function teamColor(id){ return (state.teams&&state.teams[id]&&state.teams[id].color)||"#64748b"; }
+    function esc(s){ return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+
+    function renderScores(){
+      var wrap=document.getElementById("scoreboard"); var teams=state.teams||{};
+      var arr=Object.keys(teams).map(function(id){return Object.assign({id:id},teams[id]);});
+      arr.sort(function(a,b){return (b.score||0)-(a.score||0)||(a.ts||0)-(b.ts||0);});
+      wrap.innerHTML="";
+      if(!arr.length){ wrap.innerHTML='<span class="text-white/40 text-sm">팀 없음</span>'; return; }
+      arr.forEach(function(t){
+        var chip=document.createElement("div"); chip.className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/10";
+        chip.innerHTML='<span style="width:16px;height:16px;border-radius:5px;background:'+(t.color||"#64748b")+'"></span>'+
+          '<span class="font-semibold">'+esc(t.name||"팀")+'</span>'+
+          '<span class="text-xl font-bold tabular-nums">'+(t.score||0)+'</span>';
+        wrap.appendChild(chip);
+      });
+    }
+
+    function renderBoard(){
+      var r=roundById(state.activeRound);
+      document.getElementById("roundTitle").textContent=r.name;
+      var cats=r.categories||[]; var board=document.getElementById("board");
+      board.style.gridTemplateColumns="minmax(80px,0.8fr) repeat("+COLS.length+",1fr)";
+      board.innerHTML="";
+      var corner=document.createElement("div"); corner.className="hcell corner"; corner.textContent="카테고리"; board.appendChild(corner);
+      COLS.forEach(function(col){ var h=document.createElement("div"); h.className="hcell "+(col==="bonus"?"bonus":"pts"); h.textContent=(col==="bonus"?"보너스":col); board.appendChild(h); });
+      var owners=state.owners||{}, used=state.used||{}, curKey=(state.current&&state.current.cellKey)||"";
+      cats.forEach(function(cat){
+        var l=document.createElement("div"); l.className="lcell"; l.textContent=cat.name; board.appendChild(l);
+        COLS.forEach(function(col){
+          var key=r.id+"|"+cat.id+"|"+col; var owner=owners[key]; var isUsed=!!(used[key]||owner);
+          var cell=document.createElement("div"); cell.className="cell"; if(key===curKey) cell.className+=" ring-4 ring-indigo-400 rounded-lg";
+          var back=document.createElement("div"); back.className="back";
+          if(owner){ back.style.background=teamColor(owner); back.textContent="✓"; }
+          else if(isUsed){ back.style.background="rgba(0,0,0,.10)"; }
+          else { back.style.background="transparent"; }
+          var post=document.createElement("div"); post.className="postit"+(col==="bonus"?" bonus":"");
+          if(isUsed){
+            if(prevUsed[key]||prevOwners[key]){ post.classList.add("gone"); }
+            else { (function(p){ requestAnimationFrame(function(){ requestAnimationFrame(function(){ p.classList.add("peel"); }); }); setTimeout(function(){ p.classList.add("gone"); },800); })(post); }
+          }
+          cell.appendChild(back); cell.appendChild(post); board.appendChild(cell);
+        });
+      });
+      prevOwners=Object.assign({},owners); prevUsed=Object.assign({},used);
+    }
+
+    var lastCellKey="", lastReveal=-1, lastStage="";
+    function buildProblem(info){
+      var body=document.getElementById("qBody"); body.innerHTML=""; var q=info.q;
+      if(q.type==="music"){ body.appendChild(musicView()); setupMusic(q); }
+      else if(q.type==="text"){
+        var d=document.createElement("div");
+        d.innerHTML='<div class="text-2xl text-white/60 mb-4">초성 힌트</div>'+
+          '<div style="font-size:9rem;line-height:1" class="font-black tracking-widest text-pink-200">'+esc(q.hint||"")+'</div>';
+        body.appendChild(d);
+      } else {
+        var img=document.createElement("img"); img.src=q.image||"";
+        img.className="max-h-[62vh] max-w-full rounded-2xl object-contain";
+        img.onerror=function(){ body.innerHTML='<div class="text-white/40 text-xl">이미지 준비 중 ('+esc(q.image||"")+')</div>'; };
+        body.appendChild(img);
+      }
+    }
+    function buildAnswer(info){
+      var body=document.getElementById("qBody"); body.innerHTML=""; var q=info.q; stopMusic();
+      var ansTxt=(q.answer&&q.answer[0])||"";
+      var ben=q.benefit?('<div class="mt-6 text-4xl font-black text-amber-300" style="text-shadow:0 3px 14px rgba(0,0,0,.9)">🎁 '+esc(q.benefit)+'</div>'):'';
+      if(q.type==="music"){
+        var aid=q.ansYoutubeId||q.youtubeId||""; var ast=parseInt(q.ansStart,10)||0;
+        var html='<div class="text-5xl font-black text-emerald-300 mb-5" style="text-shadow:0 3px 12px rgba(0,0,0,.8)">정답 : '+esc(ansTxt)+'</div>';
+        if(aid){ html+='<iframe width="900" height="506" style="max-width:88vw;max-height:52vh;border-radius:16px;border:0" src="https://www.youtube.com/embed/'+encodeURIComponent(aid)+'?start='+ast+'&autoplay=1&rel=0" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>'; }
+        else { html+='<div class="text-white/40">정답 영상 링크 준비 중</div>'; }
+        body.innerHTML=html+ben;
+      } else {
+        if(q.image){ var img=document.createElement("img"); img.src=q.image; img.className="max-h-[52vh] max-w-full rounded-2xl object-contain"; body.appendChild(img); }
+        var d=document.createElement("div"); d.className="mt-5 text-5xl font-black text-emerald-300"; d.style.textShadow="0 3px 12px rgba(0,0,0,.8)"; d.textContent="정답 : "+ansTxt; body.appendChild(d);
+        if(q.benefit){ var bd=document.createElement("div"); bd.className="mt-6 text-4xl font-black text-amber-300"; bd.style.textShadow="0 3px 14px rgba(0,0,0,.9)"; bd.textContent="🎁 "+q.benefit; body.appendChild(bd); }
+      }
+    }
+    function renderCurrent(){
+      var cur=state.current||{}; var ov=document.getElementById("qOverlay");
+      if(!cur.cellKey){ ov.classList.add("hidden"); ov.classList.remove("flex"); stopMusic(); document.getElementById("qBody").innerHTML=""; lastCellKey=""; lastReveal=-1; lastStage=""; return; }
+      var info=findQuestion(cur.cellKey); if(!info) return;
+      var isNew=(cur.cellKey!==lastCellKey);
+      if(isNew){ ov.classList.add("hidden"); ov.classList.remove("flex");
+        setTimeout(function(){ if((state.current&&state.current.cellKey)===cur.cellKey){ ov.classList.remove("hidden"); ov.classList.add("flex"); } }, 850);
+      } else { ov.classList.remove("hidden"); ov.classList.add("flex"); }
+      document.getElementById("qMeta").textContent=info.cat.name+" · "+(info.points==="bonus"?"보너스":info.points+"점");
+      var show=!!cur.show, ans=!!cur.answer;
+      var clueEl=document.getElementById("qClue");
+      var clueText = info.q.clue ? ("제시어 : "+info.q.clue) : "";
+      if(clueText && !ans){ clueEl.textContent=clueText; clueEl.classList.remove("hidden","big","small");
+        var smallClue = show && (info.q.type==="image"||info.q.type==="zoom"||info.q.type==="scene");
+        clueEl.classList.add(smallClue?"small":"big"); }
+      else { clueEl.classList.add("hidden"); }
+      var stage = (!show && !ans) ? "clue" : (ans ? "answer" : "problem");
+      if(isNew || stage!==lastStage){
+        if(stage==="clue"){ stopMusic(); document.getElementById("qBody").innerHTML=""; }
+        else if(stage==="problem"){ buildProblem(info); }
+        else { buildAnswer(info); }
+        lastReveal=-1;
+      }
+      if(info.q.type==="music" && stage==="problem" && cur.reveal!==lastReveal) playReveal(info.q, cur.reveal);
+      lastCellKey=cur.cellKey; lastReveal=cur.reveal; lastStage=stage;
+    }
+
+    function musicView(){
+      var d=document.createElement("div"); d.className="flex flex-col items-center gap-6";
+      d.innerHTML='<div class="text-2xl text-white/60">음악 재생</div>'+
+        '<div class="flex items-end gap-2 h-12">'+
+        '<div class="eqbar" style="animation-delay:0s"></div><div class="eqbar" style="animation-delay:.15s"></div>'+
+        '<div class="eqbar" style="animation-delay:.3s"></div><div class="eqbar" style="animation-delay:.45s"></div>'+
+        '<div class="eqbar" style="animation-delay:.6s"></div></div>'+
+        '<div id="revealLabel" class="text-xl text-pink-300"></div>';
+      return d;
+    }
+    function setupMusic(q){ if(!ytReady)return; try{ ytPlayer.loadVideoById({videoId:q.youtubeId,startSeconds:q.start||0}); ytPlayer.pauseVideo(); }catch(e){} }
+    function playReveal(q,reveal){
+      if(!ytReady)return; clearTimeout(pauseTimer);
+      var label=document.getElementById("revealLabel"); var dur=0;
+      if(reveal===1)dur=300; else if(reveal===2)dur=1000; else if(reveal===3)dur=3000; else if(reveal===4)dur=5000; else if(reveal>=5)dur=0;
+      if(reveal<=0){ try{ytPlayer.pauseVideo();}catch(e){} if(label)label.textContent=""; return; }
+      try{ ytPlayer.seekTo(q.start||0,true); ytPlayer.playVideo(); }catch(e){}
+      if(label) label.textContent=reveal===1?"0.3초":reveal===2?"1초":reveal===3?"3초":reveal===4?"5초":"전체 재생";
+      if(dur>0) pauseTimer=setTimeout(function(){ try{ytPlayer.pauseVideo();}catch(e){} },dur);
+    }
+    function stopMusic(){ clearTimeout(pauseTimer); if(ytReady){ try{ytPlayer.pauseVideo();}catch(e){} } }
+    window.onYouTubeIframeAPIReady=function(){ ytPlayer=new YT.Player("ytHolder",{height:"180",width:"320",playerVars:{controls:0,disablekb:1,modestbranding:1,rel:0},events:{onReady:function(){ytReady=true;}}}); };
+    function loadYT(){ var s=document.createElement("script"); s.src="https://www.youtube.com/iframe_api"; document.head.appendChild(s); }
+
+    document.getElementById("startBtn").addEventListener("click",function(){
+      document.getElementById("startOverlay").remove(); loadYT();
+      MoonStore.subscribe(function(s){ state=s||{}; renderScores(); renderBoard(); renderCurrent(); });
+    });
+  })();
+  </script>
+</body>
+</html>
