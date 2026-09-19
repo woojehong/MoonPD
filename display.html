@@ -18,18 +18,18 @@
       repeating-linear-gradient(90deg, rgba(0,0,0,.10) 0 1px, transparent 1px 118px),
       repeating-linear-gradient(90deg, rgba(255,255,255,.05) 0 1px, transparent 1px 26px),
       linear-gradient(180deg,#b9814a,#8f6231);}
-  #board{gap:10px;background:#f0e7cf;padding:16px;border-radius:14px;box-shadow:0 14px 40px rgba(0,0,0,.45);
-    margin:auto;max-width:min(96vw,960px);width:100%;align-content:start}
+  #board{gap:8px;background:#f0e7cf;padding:12px;border-radius:14px;box-shadow:0 14px 40px rgba(0,0,0,.45);
+    margin:auto;max-width:min(97vw,1000px);width:100%;height:100%;max-height:100%}
   .hcell{display:flex;align-items:center;justify-content:center;background:#fdfaf0;border:1px solid #d8cdb0;border-radius:6px;min-height:60px}
   .hcell.pts{font-size:clamp(1.4rem,3vw,2.6rem);font-weight:700;color:#222}
   .hcell.corner{font-size:clamp(.9rem,1.8vw,1.4rem);color:#b91c1c;font-weight:700}
   .hcell.bonus{color:#b45309;background:#fff5da;border-color:#e6c675;font-size:clamp(1rem,2vw,1.7rem);font-weight:700}
-  .lcell{display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.05;
-    background:#fdfaf0;border:3px solid #dc2626;border-radius:6px;color:#111;
-    font-size:clamp(1rem,2vw,1.7rem);font-weight:700;padding:.2rem .3rem}
-  .cell{position:relative;aspect-ratio:1/1}
-  .cell .back{position:absolute;inset:0;border-radius:8px;display:flex;align-items:center;justify-content:center;
-    font-size:2.4rem;color:#101010;font-weight:700;box-shadow:inset 0 0 0 3px rgba(0,0,0,.10)}
+  .lcell{display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.05;white-space:nowrap;overflow:hidden;
+    background:#fdfaf0;border:2px solid #dc2626;border-radius:6px;color:#111;
+    font-size:clamp(.8rem,1.7vw,1.5rem);font-weight:700;padding:.15rem .3rem}
+  .cell{position:relative;min-height:0}
+  .cell .back{position:absolute;inset:0;border-radius:8px;display:flex;align-items:center;justify-content:center;text-align:center;
+    font-size:clamp(.55rem,1.35vw,1.05rem);color:#fff;font-weight:800;line-height:1.12;padding:2px 4px;overflow:hidden;box-shadow:inset 0 0 0 3px rgba(0,0,0,.10)}
   .cell .postit{position:absolute;inset:0;background:#fb469b;border-radius:5px;
     box-shadow:0 7px 12px rgba(0,0,0,.28), inset 0 -10px 16px rgba(0,0,0,.10);
     transition:transform .75s cubic-bezier(.3,.7,.35,1),opacity .75s ease;transform-origin:top center;backface-visibility:hidden}
@@ -54,6 +54,13 @@
     text-shadow:0 6px 22px rgba(0,0,0,.95),0 0 10px #000;background:rgba(0,0,0,.30);border-radius:20px;padding:.1em .35em}
   @keyframes eq{0%,100%{height:14px}50%{height:46px}}
   .eqbar{width:10px;background:#fb469b;border-radius:5px;animation:eq .8s ease-in-out infinite}
+  #qOverlay.clue-mode{background:#efe6cd}
+  #qOverlay.clue-mode #qMeta{color:#9a5a12}
+  #qOverlay.clue-mode #qClue{color:#141414;text-shadow:none}
+  #qOverlay.clue-mode #qClue .clabel{color:#8a5a1a;opacity:.9}
+  #qOverlay.clue-mode #qClue .cval{color:#141414}
+  @keyframes clueGrow{from{transform:scale(.18);opacity:0}60%{opacity:1}to{transform:scale(1);opacity:1}}
+  #qClue.grow{animation:clueGrow .55s cubic-bezier(.2,.85,.3,1)}
 </style>
 </head>
 <body class="overflow-hidden">
@@ -63,13 +70,13 @@
     <button id="startBtn" class="px-12 py-4 rounded-2xl text-lg font-bold" style="background:#fb469b;color:#fff">시작하기</button>
   </div>
 
-  <div id="scoreboard" class="fixed top-0 inset-x-0 z-50 flex flex-wrap items-center gap-2 px-4 py-2 bg-black/70 backdrop-blur text-white" style="font-family:'Pretendard',system-ui,sans-serif"></div>
+  <div id="scoreboard" class="fixed top-0 inset-x-0 z-50 flex flex-nowrap items-center gap-2 px-4 py-2 bg-black/70 backdrop-blur text-white overflow-x-auto" style="font-family:'Pretendard',system-ui,sans-serif"></div>
 
   <main class="h-screen flex flex-col pt-16 px-6 pb-6 gap-3">
     <header class="flex items-center justify-between">
       <h1 id="roundTitle" class="text-4xl text-white drop-shadow" style="font-weight:700">라운드</h1>
     </header>
-    <section class="flex-1 min-h-0 overflow-auto flex items-center justify-center">
+    <section class="flex-1 min-h-0 overflow-hidden flex items-center justify-center">
       <div id="board" class="grid"></div>
     </section>
   </main>
@@ -92,7 +99,7 @@
   <script src="js/store.js"></script>
   <script>
   (function(){
-    var DATA=window.MOONPD_DATA, TIERS=DATA.pointTiers, COLS=TIERS.concat(["bonus"]), state={}, prevOwners={}, prevUsed={};
+    var DATA=window.MOONPD_DATA, TIERS=DATA.pointTiers, COLS=TIERS.concat(["bonus"]), state={}, prevOwners={}, prevUsed={}, booted=false, audioCtx=null;
     var ytPlayer=null, ytReady=false, pauseTimer=null;
 
     function roundById(id){ return DATA.rounds.find(function(r){return r.id===id;})||DATA.rounds[0]; }
@@ -123,7 +130,8 @@
       var r=roundById(state.activeRound);
       document.getElementById("roundTitle").textContent=r.name;
       var cats=r.categories||[]; var board=document.getElementById("board");
-      board.style.gridTemplateColumns="minmax(80px,0.8fr) repeat("+COLS.length+",1fr)";
+      board.style.gridTemplateColumns="minmax(64px,0.85fr) repeat("+COLS.length+",1fr)";
+      board.style.gridTemplateRows="auto repeat("+cats.length+",minmax(0,1fr))";
       board.innerHTML="";
       var corner=document.createElement("div"); corner.className="hcell corner"; corner.textContent="카테고리"; board.appendChild(corner);
       COLS.forEach(function(col){ var h=document.createElement("div"); h.className="hcell "+(col==="bonus"?"bonus":"pts"); h.textContent=(col==="bonus"?"보너스":col); board.appendChild(h); });
@@ -131,21 +139,21 @@
       cats.forEach(function(cat){
         var l=document.createElement("div"); l.className="lcell"; l.textContent=cat.name; board.appendChild(l);
         COLS.forEach(function(col){
-          var key=r.id+"|"+cat.id+"|"+col; var owner=owners[key]; var isUsed=!!(used[key]||owner);
+          var key=r.id+"|"+cat.id+"|"+col; var owner=owners[key]; var isUsed=!!(used[key]||owner); var qq=cat.questions[col]||{};
           var cell=document.createElement("div"); cell.className="cell"; if(key===curKey) cell.className+=" ring-4 ring-indigo-400 rounded-lg";
           var back=document.createElement("div"); back.className="back";
-          if(owner){ back.style.background=teamColor(owner); back.textContent="✓"; }
+          if(owner){ back.style.background=teamColor(owner); back.textContent=(qq.artist?qq.artist+" - ":"")+((qq.answer&&qq.answer[0])||""); }
           else if(isUsed){ back.style.background="rgba(0,0,0,.10)"; }
           else { back.style.background="transparent"; }
           var post=document.createElement("div"); post.className="postit"+(col==="bonus"?" bonus":"");
           if(isUsed){
-            if(prevUsed[key]||prevOwners[key]){ post.classList.add("gone"); }
-            else { (function(p){ requestAnimationFrame(function(){ requestAnimationFrame(function(){ p.classList.add("peel"); }); }); setTimeout(function(){ p.classList.add("gone"); },800); })(post); }
+            if(prevUsed[key]||prevOwners[key]||!booted){ post.classList.add("gone"); }
+            else { playFlip(); (function(p){ requestAnimationFrame(function(){ requestAnimationFrame(function(){ p.classList.add("peel"); }); }); setTimeout(function(){ p.classList.add("gone"); },800); })(post); }
           }
           cell.appendChild(back); cell.appendChild(post); board.appendChild(cell);
         });
       });
-      prevOwners=Object.assign({},owners); prevUsed=Object.assign({},used);
+      prevOwners=Object.assign({},owners); prevUsed=Object.assign({},used); booted=true;
     }
 
     var lastCellKey="", lastReveal=-1, lastStage="";
@@ -196,8 +204,9 @@
         clueEl.classList.add(smallClue?"small":"big"); }
       else { clueEl.classList.add("hidden"); }
       var stage = (!show && !ans) ? "clue" : (ans ? "answer" : "problem");
+      if(stage==="clue"){ ov.classList.add("clue-mode"); } else { ov.classList.remove("clue-mode"); }
       if(isNew || stage!==lastStage){
-        if(stage==="clue"){ stopMusic(); document.getElementById("qBody").innerHTML=""; }
+        if(stage==="clue"){ stopMusic(); document.getElementById("qBody").innerHTML=""; retriggerGrow(); }
         else if(stage==="problem"){ buildProblem(info); }
         else { buildAnswer(info); }
         lastReveal=-1;
@@ -206,6 +215,14 @@
       lastCellKey=cur.cellKey; lastReveal=cur.reveal; lastStage=stage;
     }
 
+    function retriggerGrow(){ var el=document.getElementById("qClue"); if(!el)return; el.classList.remove("grow"); void el.offsetWidth; el.classList.add("grow"); }
+    function playFlip(){ try{ if(!audioCtx){ audioCtx=new (window.AudioContext||window.webkitAudioContext)(); } var ctx=audioCtx; if(ctx.state==="suspended"){ctx.resume();}
+      var dur=0.3, sr=ctx.sampleRate, n=Math.floor(sr*dur), buf=ctx.createBuffer(1,n,sr), d=buf.getChannelData(0);
+      for(var i=0;i<n;i++){ var t=i/n; d[i]=(Math.random()*2-1)*Math.pow(1-t,2.4)*0.55; }
+      var src=ctx.createBufferSource(); src.buffer=buf;
+      var bp=ctx.createBiquadFilter(); bp.type="bandpass"; bp.frequency.setValueAtTime(2000,ctx.currentTime); bp.frequency.exponentialRampToValueAtTime(550,ctx.currentTime+dur); bp.Q.value=0.7;
+      var g=ctx.createGain(); g.gain.setValueAtTime(0.85,ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.02,ctx.currentTime+dur);
+      src.connect(bp); bp.connect(g); g.connect(ctx.destination); src.start(); }catch(e){} }
     function musicView(){
       var d=document.createElement("div"); d.className="flex flex-col items-center gap-6";
       d.innerHTML='<div class="text-2xl text-white/60">음악 재생</div>'+
@@ -231,7 +248,7 @@
     function loadYT(){ var s=document.createElement("script"); s.src="https://www.youtube.com/iframe_api"; document.head.appendChild(s); }
 
     document.getElementById("startBtn").addEventListener("click",function(){
-      document.getElementById("startOverlay").remove(); loadYT();
+      document.getElementById("startOverlay").remove(); loadYT(); try{ audioCtx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){}
       MoonStore.subscribe(function(s){ state=s||{}; renderScores(); renderBoard(); renderCurrent(); });
     });
   })();

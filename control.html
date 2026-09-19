@@ -53,7 +53,7 @@
         <button id="undo" class="btn bg-[#232b45] text-slate-200 py-2">↶ 실행취소</button>
       </div>
       <div class="lbl mb-2">칸을 눌러 문제 열기</div>
-      <div id="miniBoard" class="flex gap-2 overflow-x-auto pb-1"></div>
+      <div id="miniBoard" class="grid gap-1.5"></div>
     </div>
   </section>
 </main>
@@ -146,21 +146,23 @@
     var r=activeRound(); document.getElementById("roundTitle").textContent=r.name;
     var el=document.getElementById("miniBoard"); el.innerHTML="";
     var owners=state.owners||{}, used=state.used||{}, cur=(state.current&&state.current.cellKey)||"";
+    var cols=TIERS.concat(["bonus"]);
+    el.style.gridTemplateColumns="minmax(48px,0.9fr) repeat("+cols.length+",1fr)";
+    var corner=document.createElement("div"); corner.textContent=""; el.appendChild(corner);
+    cols.forEach(function(pt){ var h=document.createElement("div"); h.className="text-center text-[11px] font-bold text-slate-400 py-1"; h.textContent=(pt==="bonus"?"보너스":pt); el.appendChild(h); });
     (r.categories||[]).forEach(function(cat){
-      var col=document.createElement("div"); col.className="flex flex-col gap-2 shrink-0"; col.style.width="90px";
-      var h=document.createElement("div"); h.className="text-center text-xs font-bold bg-[#0b1020] rounded-lg py-2 truncate px-1"; h.textContent=cat.name; col.appendChild(h);
-      TIERS.concat(["bonus"]).forEach(function(pt){
+      var lab=document.createElement("div"); lab.className="text-[11px] font-bold text-slate-200 flex items-center justify-center text-center leading-tight px-0.5"; lab.textContent=cat.name; el.appendChild(lab);
+      cols.forEach(function(pt){
         var key=r.id+"|"+cat.id+"|"+pt; var owner=owners[key]; var isUsed=!!(used[key]||owner); var isB=(pt==="bonus");
-        var b=document.createElement("button"); b.className="rounded-lg py-3 text-sm font-black";
+        var b=document.createElement("button"); b.className="rounded-md py-2.5 text-xs font-black";
         if(owner){ b.style.background=(state.teams&&state.teams[owner]&&state.teams[owner].color)||"#64748b"; b.style.color="#0b1020"; b.textContent="✓"; }
         else if(isUsed){ b.className+=" bg-[#0b1020] text-slate-600 border border-[#232b45]"; b.textContent="—"; }
         else if(isB){ b.className+=" bg-amber-500 text-black"; b.textContent="B"; }
         else { b.className+=" bg-[#1c2440] border border-[#2e3a5e] text-indigo-200"; b.textContent=pt; }
         if(key===cur) b.className+=" ring-2 ring-indigo-400";
         b.onclick=function(){ MoonStore.openCell(key); };
-        col.appendChild(b);
+        el.appendChild(b);
       });
-      el.appendChild(col);
     });
   }
   function renderPanel(){

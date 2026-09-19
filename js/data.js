@@ -224,3 +224,9 @@ window.MOONPD_DATA.rounds[0].categories[0].questions[10] = { type:"image", clue:
   A("c_classic",{10:"비발디",20:"베토벤",30:"차이콥스키",40:"드보르작",50:"슈베르트",bonus:"파헬벨"});
   A("c_ost",{10:"겨울왕국",20:"인어공주",30:"토이 스토리",40:"디지몬 어드벤처",50:"하울의 움직이는 성",bonus:"핑크퐁"});
 })();
+// 카테고리 라벨 한 줄 표기로 변경 + 캐치캐치 가수 최예나 정정
+(function(){ var R=window.MOONPD_DATA.rounds.find(function(r){return r.id==="r2";});
+  var nm={c_pre80:"~1990",c_90:"1990s",c_00:"2000s",c_10:"2010s",c_20:"2020s",c_2026:"2026",c_classic:"클래식",c_ost:"OST"};
+  R.categories.forEach(function(c){ if(nm[c.id]) c.name=nm[c.id]; });
+  var c=R.categories.find(function(x){return x.id==="c_2026";}); if(c&&c.questions[50]) c.questions[50].artist="최예나";
+})();
