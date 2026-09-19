@@ -45,6 +45,10 @@
   #qClue.small{margin-bottom:1.2rem}
   #qClue.small .clabel{font-size:clamp(.8rem,1.8vw,1.2rem);margin-bottom:.5rem}
   #qClue.small .cval{font-size:clamp(1.2rem,3.4vw,2.6rem);line-height:1.1}
+  .ansBox{display:flex;flex-direction:column;align-items:center;color:#6ee7b7}
+  .ansBox .alabel{font-weight:700;opacity:.75;letter-spacing:.2em;font-size:clamp(1rem,2.4vw,1.7rem);margin-bottom:.9rem}
+  .ansBox .aartist{font-weight:800;opacity:.92;color:#a7f3d0;font-size:clamp(1.3rem,3vw,2.2rem);margin-bottom:.6rem}
+  .ansBox .aval{font-weight:900;font-size:clamp(2rem,4.5vw,3.4rem);line-height:1.12}
   #qAnswer{position:absolute;inset:0;align-items:center;justify-content:center;pointer-events:none}
   #qAnswer .ans{font-size:clamp(3rem,12vw,11rem);font-weight:900;color:#fff;-webkit-text-stroke:4px #000;
     text-shadow:0 6px 22px rgba(0,0,0,.95),0 0 10px #000;background:rgba(0,0,0,.30);border-radius:20px;padding:.1em .35em}
@@ -166,13 +170,13 @@
       var ben=q.benefit?('<div class="mt-6 text-4xl font-black text-amber-300" style="text-shadow:0 3px 14px rgba(0,0,0,.9)">🎁 '+esc(q.benefit)+'</div>'):'';
       if(q.type==="music"){
         var aid=q.ansYoutubeId||q.youtubeId||""; var ast=parseInt(q.ansStart,10)||0;
-        var html='<div class="text-5xl font-black text-emerald-300 mb-5" style="text-shadow:0 3px 12px rgba(0,0,0,.8)">정답 : '+esc(ansTxt)+'</div>';
+        var html='<div class="ansBox mb-5" style="text-shadow:0 3px 12px rgba(0,0,0,.8)"><div class="alabel">정답</div>'+(q.artist?('<div class="aartist">'+esc(q.artist)+'</div>'):'')+'<div class="aval">'+esc(ansTxt)+'</div></div>';
         if(aid){ html+='<iframe width="900" height="506" style="max-width:88vw;max-height:52vh;border-radius:16px;border:0" src="https://www.youtube.com/embed/'+encodeURIComponent(aid)+'?start='+ast+'&autoplay=1&rel=0" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>'; }
         else { html+='<div class="text-white/40">정답 영상 링크 준비 중</div>'; }
         body.innerHTML=html+ben;
       } else {
         if(q.image){ var img=document.createElement("img"); img.src=q.image; img.className="max-h-[52vh] max-w-full rounded-2xl object-contain"; body.appendChild(img); }
-        var d=document.createElement("div"); d.className="mt-5 text-5xl font-black text-emerald-300"; d.style.textShadow="0 3px 12px rgba(0,0,0,.8)"; d.textContent="정답 : "+ansTxt; body.appendChild(d);
+        var d=document.createElement("div"); d.className="ansBox mt-5"; d.style.textShadow="0 3px 12px rgba(0,0,0,.8)"; d.innerHTML='<div class="alabel">정답</div>'+(q.artist?'<div class="aartist"></div>':'')+'<div class="aval"></div>'; if(q.artist)d.querySelector(".aartist").textContent=q.artist; d.querySelector(".aval").textContent=ansTxt; body.appendChild(d);
         if(q.benefit){ var bd=document.createElement("div"); bd.className="mt-6 text-4xl font-black text-amber-300"; bd.style.textShadow="0 3px 14px rgba(0,0,0,.9)"; bd.textContent="🎁 "+q.benefit; body.appendChild(bd); }
       }
     }

@@ -211,3 +211,16 @@ window.MOONPD_DATA.rounds[0].categories[0].questions[10] = { type:"image", clue:
   c.questions[30].start=0;   c.questions[30].ansStart=30;  // 붉은 노을 정답0:30
   c.questions[50].start=0;   c.questions[50].ansStart=83;  // 노부부 정답1:23
 })();
+// 전곡 '가수'(정답화면 가수줄) 지정. 클래식=작곡가, OST=작품명. 캐치캐치는 임시(확인필요).
+(function(){ var R=window.MOONPD_DATA.rounds.find(function(r){return r.id==="r2";});
+  function A(cid,map){ var c=R.categories.find(function(x){return x.id===cid;}); if(!c)return;
+    Object.keys(map).forEach(function(t){ if(c.questions[t]) c.questions[t].artist=map[t]; }); }
+  A("c_pre80",{10:"비틀즈",20:"김현식",30:"이문세",40:"퀸",50:"김광석",bonus:"윤수일"});
+  A("c_90",{10:"god",20:"무한궤도",30:"DJ DOC",40:"전람회",50:"서태지와 아이들",bonus:"Y2K"});
+  A("c_00",{10:"레이디 가가",20:"동방신기",30:"비",40:"장윤정",50:"김동률",bonus:"아이비"});
+  A("c_10",{10:"빅뱅",20:"세븐틴",30:"에드 시런",40:"여자친구",50:"백예린",bonus:"멜로망스"});
+  A("c_20",{10:"이무진",20:"위켄드",30:"리센느",40:"윤하",50:"방탄소년단",bonus:"(여자)아이들"});
+  A("c_2026",{10:"헌트릭스",20:"엔믹스",30:"악뮤",40:"코르티스",50:"이준",bonus:"에이티즈"});
+  A("c_classic",{10:"비발디",20:"베토벤",30:"차이콥스키",40:"드보르작",50:"슈베르트",bonus:"파헬벨"});
+  A("c_ost",{10:"겨울왕국",20:"인어공주",30:"토이 스토리",40:"디지몬 어드벤처",50:"하울의 움직이는 성",bonus:"핑크퐁"});
+})();
