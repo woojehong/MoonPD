@@ -193,3 +193,8 @@ window.MOONPD_DATA.rounds[0].categories[0].questions[10] = { type:"image", clue:
   var c=R.categories.find(function(x){return x.id==="c_pre80";});
   c.questions[30]={type:"music",clue:"",answer:["붉은 노을"],youtubeId:"NfuELl2KZHM",start:0,ansYoutubeId:"NfuELl2KZHM",ansStart:0};
 })();
+// 80년대이전 제시어: 붉은노을(30)=이론, 노부부(50)=통기타
+(function(){ var R=window.MOONPD_DATA.rounds.find(function(r){return r.id==="r2";});
+  var c=R.categories.find(function(x){return x.id==="c_pre80";});
+  c.questions[30].clue="이론"; c.questions[50].clue="통기타";
+})();
