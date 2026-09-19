@@ -169,3 +169,8 @@ window.MOONPD_DATA.rounds[0].categories[0].questions[10] = { type:"image", clue:
   function C(cid,t,v){ var c=R.categories.find(function(x){return x.id===cid;}); if(c&&c.questions[t]) c.questions[t].clue=v; }
   C("c_2026",30,"남매"); C("c_10",40,"스페인어");
 })();
+// 20년대 보너스 교체: APT → 퀸카((여자)아이들). 문제=음원(X3mCgkh0VX4), 정답=공식MV(7HDeem-JaSY). 혜택 멘트는 추후 지정.
+(function(){ var R=window.MOONPD_DATA.rounds.find(function(r){return r.id==="r2";});
+  var c=R.categories.find(function(x){return x.id==="c_20";});
+  c.questions.bonus={ type:"music", clue:"", answer:["퀸카","Queencard","퀸카 (Queencard)"], youtubeId:"X3mCgkh0VX4", start:0, ansYoutubeId:"7HDeem-JaSY", ansStart:0, benefit:"특별 혜택 (추후 지정)" };
+})();
