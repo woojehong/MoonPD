@@ -8,71 +8,92 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <style>
-  body{background:#0b0f1a;color:#f4f6fb;font-family:'Pretendard',system-ui,-apple-system,'Segoe UI',sans-serif}
-  .btn{padding:.7rem 1rem;border-radius:.9rem;font-weight:600}
+  body{background:#0b1020;color:#eef2ff;font-family:'Pretendard',system-ui,-apple-system,'Segoe UI',sans-serif}
   .tap{-webkit-tap-highlight-color:transparent}
+  .btn{padding:.8rem 1rem;border-radius:1rem;font-weight:700;font-size:.95rem;line-height:1}
+  .lbl{font-size:.7rem;letter-spacing:.05em;color:#8b93a7;font-weight:700;text-transform:uppercase}
+  .card{background:#141a2e;border:1px solid #232b45;border-radius:1.1rem}
+  .tab{flex:1;text-align:center;padding:.75rem .2rem;border-radius:.9rem;font-weight:800;font-size:.92rem;background:#182036;color:#8b93a7}
+  .tab.on{background:#5b6cff;color:#fff;box-shadow:0 6px 16px rgba(91,108,255,.35)}
+  input{font-size:16px}
 </style>
 </head>
 <body class="tap">
-<main class="max-w-md mx-auto p-4 pb-40 flex flex-col gap-5">
-  <header class="flex items-center justify-between pt-2">
-    <h1 class="text-lg font-bold tracking-tight">MoonPD 관제센터</h1>
+<main class="max-w-md mx-auto p-4 pb-[26rem] flex flex-col gap-4">
+  <header class="flex items-center justify-between pt-1">
+    <h1 class="text-xl font-black tracking-tight">MoonPD <span class="text-slate-500 text-sm font-semibold">관제센터</span></h1>
     <span id="conn" class="text-xs text-slate-500">연결 중…</span>
   </header>
+  <nav id="tabs" class="flex gap-2"></nav>
 
-  <!-- Round selector -->
-  <section>
-    <div class="text-xs text-slate-400 mb-2">라운드</div>
-    <div id="roundSel" class="grid grid-cols-3 gap-2"></div>
+  <!-- 팀 설정 -->
+  <section id="viewTeams" class="flex flex-col gap-4">
+    <div class="card p-4">
+      <div class="lbl mb-2">팀 목록 · 최대 8팀</div>
+      <div id="teamList" class="flex flex-col gap-2 mb-3"></div>
+      <div class="flex items-center gap-2">
+        <input id="teamName" placeholder="팀 이름" maxlength="14" class="flex-1 bg-[#0b1020] border border-[#232b45] rounded-xl px-3 py-3 outline-none" />
+        <button id="addTeam" class="btn bg-[#5b6cff] text-white">추가</button>
+      </div>
+      <div class="lbl mt-3 mb-2">팀 상징 색</div>
+      <div id="palette" class="flex flex-wrap gap-2"></div>
+    </div>
+    <div class="card p-4 flex flex-col gap-2">
+      <div class="lbl mb-1">초기화</div>
+      <button id="resetScores" class="btn w-full bg-amber-600 text-black">점수 초기화 <span class="font-normal opacity-80">(팀 유지)</span></button>
+      <button id="resetGame" class="btn w-full bg-rose-700 text-white">전체 초기화 <span class="font-normal opacity-80">(팀·점수·보드 삭제)</span></button>
+    </div>
   </section>
 
-  <!-- Teams -->
-  <section>
-    <div class="flex items-center justify-between mb-2">
-      <div class="text-xs text-slate-400">팀 (최대 8팀)</div>
-      <button id="clearScores" class="text-xs text-slate-500 underline">점수 초기화</button>
+  <!-- 라운드 -->
+  <section id="viewRound" class="flex flex-col gap-3" hidden>
+    <div class="card p-4">
+      <div class="flex items-center justify-between mb-3">
+        <div id="roundTitle" class="text-base font-black text-indigo-300"></div>
+        <button id="undo" class="btn bg-[#232b45] text-slate-200 py-2">↶ 실행취소</button>
+      </div>
+      <div class="lbl mb-2">칸을 눌러 문제 열기</div>
+      <div id="miniBoard" class="flex gap-2 overflow-x-auto pb-1"></div>
     </div>
-    <div id="teamList" class="flex flex-col gap-2 mb-3"></div>
-    <div class="flex items-center gap-2">
-      <input id="teamName" placeholder="팀 이름" maxlength="14"
-        class="flex-1 bg-slate-800 rounded-xl px-3 py-2 outline-none text-sm" />
-      <button id="addTeam" class="btn bg-indigo-500 text-sm">추가</button>
-    </div>
-    <div id="palette" class="flex flex-wrap gap-2 mt-2"></div>
-  </section>
-
-  <!-- Board -->
-  <section>
-    <div class="text-xs text-slate-400 mb-2">보드 · 칸을 눌러 문제 열기</div>
-    <div id="miniBoard" class="flex gap-2 overflow-x-auto pb-1"></div>
   </section>
 </main>
 
-<!-- Current cell control (sticky) -->
+<!-- 현재 문제 제어 -->
 <div id="panel" class="fixed bottom-0 inset-x-0 z-30 hidden">
-  <div class="max-w-md mx-auto m-3 p-4 rounded-2xl bg-slate-800 shadow-2xl border border-slate-700">
-    <div class="flex items-center justify-between mb-1">
-      <div id="pMeta" class="text-sm font-semibold text-indigo-300"></div>
-      <button id="pClose" class="text-xs text-slate-400 underline">닫기</button>
+  <div class="max-w-md mx-auto m-2 card p-4 shadow-2xl max-h-[80vh] overflow-y-auto">
+    <div class="flex items-center justify-between mb-2">
+      <div id="pMeta" class="text-base font-black text-indigo-300"></div>
+      <button id="pCancel" class="btn bg-[#2a3350] text-slate-200 py-2 px-3">✕ 취소</button>
     </div>
-    <div id="pAnswer" class="text-xs text-slate-400 mb-3"></div>
-    <div id="pMusic" class="grid grid-cols-3 gap-2 mb-2 hidden">
-      <button data-r="1" class="btn bg-slate-700 text-sm">1초</button>
-      <button data-r="2" class="btn bg-slate-700 text-sm">5초</button>
-      <button data-r="3" class="btn bg-slate-700 text-sm">전체</button>
-    </div>
-    <button id="pToggleAns" class="btn bg-emerald-600 w-full text-sm mb-3">정답 공개</button>
-    <div class="text-xs text-slate-400 mb-1">정답 팀 지정 (점수 가산 + 칸 색칠)</div>
-    <div id="pTeams" class="grid grid-cols-2 gap-2 mb-2"></div>
-    <button id="pClear" class="btn bg-slate-700 w-full text-xs">이 칸 점령 해제</button>
-  </div>
-</div>
+    <div id="pInfo" class="text-xs text-slate-400 bg-[#0b1020] rounded-lg px-3 py-2 mb-3"></div>
 
-<!-- Footer actions -->
-<div class="fixed bottom-0 inset-x-0 z-20">
-  <div class="max-w-md mx-auto px-3 pb-3 flex gap-2">
-    <button id="undo" class="btn bg-slate-700 flex-1 text-sm">실행취소</button>
-    <button id="resetBoard" class="btn bg-rose-900/70 flex-1 text-sm">보드 초기화</button>
+    <div class="lbl mb-2">① 공개</div>
+    <button id="pToggleShow" class="btn w-full bg-[#5b6cff] text-white mb-2">문제 공개</button>
+    <div class="grid grid-cols-3 gap-1.5 mb-2">
+      <button data-r="1" class="btn bg-[#232b45] text-xs px-0">0.3초</button>
+      <button data-r="2" class="btn bg-[#232b45] text-xs px-0">1초</button>
+      <button data-r="3" class="btn bg-[#232b45] text-xs px-0">3초</button>
+      <button data-r="4" class="btn bg-[#232b45] text-xs px-0">5초</button>
+      <button data-r="5" class="btn bg-[#232b45] text-xs px-0">전체</button>
+      <button id="pPass" class="btn bg-amber-600 text-black text-xs px-0">패스</button>
+    </div>
+    <button id="pToggleAns" class="btn w-full bg-emerald-700 text-white mb-4">정답 공개</button>
+
+    <div class="lbl mb-1">② 채점 <span class="normal-case text-slate-500 font-normal">· 정답=색칠+가산 / 오답=감점</span></div>
+    <div id="pOwner" class="text-xs font-bold text-emerald-300 mb-2">현재 정답: 없음</div>
+    <div id="pTeams" class="flex flex-col gap-2 mb-4"></div>
+
+    <div class="flex items-center justify-between mb-2">
+      <span class="lbl">③ 돌발 보너스</span>
+      <span class="flex items-center gap-2 text-sm">
+        <button id="bonusMinus" class="px-3 py-1 rounded-lg bg-[#232b45]">−</button>
+        <span id="bonusAmt" class="w-10 text-center font-black">+10</span>
+        <button id="bonusPlus" class="px-3 py-1 rounded-lg bg-[#232b45]">+</button>
+      </span>
+    </div>
+    <div id="bonusTeams" class="flex flex-wrap gap-2 mb-4"></div>
+
+    <button id="pNext" class="btn w-full bg-[#5b6cff] text-white text-base py-4">다음으로 ▶</button>
   </div>
 </div>
 
@@ -81,111 +102,128 @@
 <script src="js/store.js"></script>
 <script>
 (function(){
-  var DATA=window.MOONPD_DATA, TIERS=DATA.pointTiers, state={}, selKey="";
+  var DATA=window.MOONPD_DATA, TIERS=DATA.pointTiers, state={};
   var PALETTE=["#ef4444","#f97316","#eab308","#22c55e","#14b8a6","#3b82f6","#8b5cf6","#ec4899"];
-  var pendingColor=PALETTE[0];
+  var pendingColor=PALETTE[0], tab="teams", bonusSel={}, bonusAmt=10, lastPanelKey="";
 
   function roundById(id){ return DATA.rounds.find(function(r){return r.id===id;})||DATA.rounds[0]; }
   function activeRound(){ return roundById(state.activeRound); }
   function findQuestion(key){ var p=key.split("|"); var r=roundById(p[0]); var c=(r.categories||[]).find(function(x){return x.id===p[1];}); if(!c)return null; var q=c.questions[p[2]]; if(!q)return null; return {r:r,c:c,points:p[2],q:q}; }
   function esc(s){ return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
-
-  // rounds
-  function renderRounds(){
-    var el=document.getElementById("roundSel"); el.innerHTML="";
-    DATA.rounds.forEach(function(r){
-      var b=document.createElement("button");
-      b.className="btn text-sm "+(state.activeRound===r.id?"bg-indigo-500":"bg-slate-800");
-      b.textContent=r.name.replace(/·.*/,"").trim()||r.id;
-      b.onclick=function(){ MoonStore.setActiveRound(r.id); };
-      el.appendChild(b);
-    });
-  }
-  // teams
   function usedColors(){ var t=state.teams||{}; return Object.keys(t).map(function(k){return t[k].color;}); }
+  function teamIds(){ var t=state.teams||{}; return Object.keys(t).sort(function(a,b){return (t[a].ts||0)-(t[b].ts||0);}); }
+
+  function renderTabs(){
+    var el=document.getElementById("tabs"); el.innerHTML="";
+    var mk=function(label,on,fn){ var b=document.createElement("button"); b.className="tab"+(on?" on":""); b.textContent=label; b.onclick=fn; el.appendChild(b); };
+    mk("팀 설정", tab==="teams", function(){ tab="teams"; syncView(); });
+    DATA.rounds.forEach(function(r,i){ mk((i+1)+"라운드", tab==="round"&&state.activeRound===r.id, function(){ tab="round"; MoonStore.setActiveRound(r.id); syncView(); }); });
+  }
+  function syncView(){ document.getElementById("viewTeams").hidden=(tab!=="teams"); document.getElementById("viewRound").hidden=(tab!=="round"); renderTabs(); renderRound(); }
+
   function renderPalette(){
     var el=document.getElementById("palette"); el.innerHTML=""; var used=usedColors();
-    PALETTE.forEach(function(c){
-      var d=document.createElement("button");
-      d.style.background=c; d.style.width="30px"; d.style.height="30px"; d.style.borderRadius="9px";
-      d.className=(pendingColor===c?"ring-2 ring-white ":"")+(used.indexOf(c)>=0?"opacity-30":"");
-      d.onclick=function(){ pendingColor=c; renderPalette(); };
-      el.appendChild(d);
-    });
+    PALETTE.forEach(function(c){ var d=document.createElement("button"); d.style.background=c; d.style.width="38px"; d.style.height="38px"; d.style.borderRadius="11px";
+      d.className=(pendingColor===c?"ring-2 ring-white ":"")+(used.indexOf(c)>=0?"opacity-25":""); d.onclick=function(){ pendingColor=c; renderPalette(); }; el.appendChild(d); });
   }
   function renderTeams(){
     var el=document.getElementById("teamList"); var t=state.teams||{}; el.innerHTML="";
-    var ids=Object.keys(t).sort(function(a,b){return (t[a].ts||0)-(t[b].ts||0);});
+    var ids=teamIds();
+    if(!ids.length){ el.innerHTML='<div class="text-sm text-slate-500">아직 팀이 없어요. 아래에서 추가하세요.</div>'; }
     ids.forEach(function(id){
-      var row=document.createElement("div");
-      row.className="flex items-center gap-2 bg-slate-800 rounded-xl px-3 py-2";
-      row.innerHTML='<span style="width:16px;height:16px;border-radius:5px;background:'+(t[id].color||"#64748b")+'"></span>'+
-        '<span class="flex-1 text-sm font-semibold">'+esc(t[id].name||"팀")+'</span>'+
-        '<span class="text-sm tabular-nums w-12 text-right">'+(t[id].score||0)+'</span>';
-      var del=document.createElement("button"); del.textContent="✕"; del.className="text-slate-500 text-xs pl-2";
-      del.onclick=function(){ if(confirm("이 팀을 삭제할까요?")) MoonStore.removeTeam(id); };
+      var row=document.createElement("div"); row.className="flex items-center gap-3 bg-[#0b1020] rounded-xl px-3 py-3";
+      row.innerHTML='<span style="width:20px;height:20px;border-radius:6px;background:'+(t[id].color||"#64748b")+'"></span>'+
+        '<span class="flex-1 font-bold truncate">'+esc(t[id].name||"팀")+'</span>'+
+        '<span class="text-lg font-black tabular-nums w-14 text-right">'+(t[id].score||0)+'</span>';
+      var del=document.createElement("button"); del.textContent="✕"; del.className="text-slate-500 text-sm pl-1";
+      del.onclick=function(){ if(confirm("‘"+(t[id].name||"팀")+"’ 팀을 삭제할까요?")) MoonStore.removeTeam(id); };
       row.appendChild(del); el.appendChild(row);
     });
-    var atMax=ids.length>=8;
-    document.getElementById("addTeam").disabled=atMax;
-    document.getElementById("addTeam").style.opacity=atMax?.4:1;
+    var atMax=ids.length>=8; var ab=document.getElementById("addTeam"); ab.disabled=atMax; ab.style.opacity=atMax?.4:1;
   }
-  // mini board
-  function renderMiniBoard(){
-    var r=activeRound(); var el=document.getElementById("miniBoard"); el.innerHTML="";
+  function renderRound(){
+    if(tab!=="round") return;
+    var r=activeRound(); document.getElementById("roundTitle").textContent=r.name;
+    var el=document.getElementById("miniBoard"); el.innerHTML="";
+    var owners=state.owners||{}, used=state.used||{}, cur=(state.current&&state.current.cellKey)||"";
     (r.categories||[]).forEach(function(cat){
-      var col=document.createElement("div"); col.className="flex flex-col gap-2 shrink-0" ; col.style.width="92px";
-      var h=document.createElement("div"); h.className="text-center text-xs font-semibold bg-slate-800 rounded-lg py-2 truncate"; h.textContent=cat.name; col.appendChild(h);
-      TIERS.forEach(function(pt){
-        var key=r.id+"|"+cat.id+"|"+pt; var owner=state.owners&&state.owners[key];
-        var b=document.createElement("button"); b.className="rounded-lg py-3 text-sm font-bold";
-        if(owner){ b.style.background=(state.teams&&state.teams[owner]&&state.teams[owner].color)||"#64748b"; b.style.color="#0b0f1a"; b.textContent="✓"; }
-        else{ b.className+=" bg-slate-800 border border-slate-700 text-indigo-200"; b.textContent=pt; }
-        if(state.current&&state.current.cellKey===key) b.className+=" ring-2 ring-indigo-400";
+      var col=document.createElement("div"); col.className="flex flex-col gap-2 shrink-0"; col.style.width="90px";
+      var h=document.createElement("div"); h.className="text-center text-xs font-bold bg-[#0b1020] rounded-lg py-2 truncate px-1"; h.textContent=cat.name; col.appendChild(h);
+      TIERS.concat(["bonus"]).forEach(function(pt){
+        var key=r.id+"|"+cat.id+"|"+pt; var owner=owners[key]; var isUsed=!!(used[key]||owner); var isB=(pt==="bonus");
+        var b=document.createElement("button"); b.className="rounded-lg py-3 text-sm font-black";
+        if(owner){ b.style.background=(state.teams&&state.teams[owner]&&state.teams[owner].color)||"#64748b"; b.style.color="#0b1020"; b.textContent="✓"; }
+        else if(isUsed){ b.className+=" bg-[#0b1020] text-slate-600 border border-[#232b45]"; b.textContent="—"; }
+        else if(isB){ b.className+=" bg-amber-500 text-black"; b.textContent="B"; }
+        else { b.className+=" bg-[#1c2440] border border-[#2e3a5e] text-indigo-200"; b.textContent=pt; }
+        if(key===cur) b.className+=" ring-2 ring-indigo-400";
         b.onclick=function(){ MoonStore.openCell(key); };
         col.appendChild(b);
       });
       el.appendChild(col);
     });
   }
-  // panel
   function renderPanel(){
     var cur=state.current||{}; var panel=document.getElementById("panel");
-    if(!cur.cellKey){ panel.classList.add("hidden"); return; }
+    if(!cur.cellKey){ panel.classList.add("hidden"); lastPanelKey=""; return; }
     var info=findQuestion(cur.cellKey); if(!info){ panel.classList.add("hidden"); return; }
-    panel.classList.remove("hidden"); selKey=cur.cellKey;
-    document.getElementById("pMeta").textContent=info.c.name+" · "+info.points+"점 ["+info.q.type+"]";
-    document.getElementById("pAnswer").textContent="정답: "+((info.q.answer&&info.q.answer[0])||"")+(info.q.hint?(" / 힌트 "+info.q.hint):"");
-    document.getElementById("pMusic").classList.toggle("hidden", info.q.type!=="music");
+    if(cur.cellKey!==lastPanelKey){ bonusSel={}; lastPanelKey=cur.cellKey; }
+    panel.classList.remove("hidden");
+    document.getElementById("pMeta").textContent=info.c.name+" · "+(info.points==="bonus"?"보너스":info.points+"점");
+    document.getElementById("pInfo").textContent="제시어: "+(info.q.clue||"-")+(info.q.benefit?(" / 혜택: "+info.q.benefit):"")+" / 정답: "+((info.q.answer&&info.q.answer[0])||"");
+    document.getElementById("pToggleShow").textContent=cur.show?"문제 숨기기":"문제 공개";
     document.getElementById("pToggleAns").textContent=cur.answer?"정답 숨기기":"정답 공개";
-    var t=state.teams||{}; var pt=document.getElementById("pTeams"); pt.innerHTML="";
-    Object.keys(t).sort(function(a,b){return (t[a].ts||0)-(t[b].ts||0);}).forEach(function(id){
-      var b=document.createElement("button"); b.className="btn text-sm"; b.style.background=t[id].color||"#64748b"; b.style.color="#0b0f1a";
-      b.textContent=t[id].name||"팀";
-      b.onclick=function(){ MoonStore.award(cur.cellKey, id); };
-      pt.appendChild(b);
+    var t=state.teams||{}; var ids=teamIds(); var owner=(state.owners||{})[cur.cellKey];
+    document.getElementById("pOwner").textContent = owner ? ("현재 정답: "+((t[owner]&&t[owner].name)||"?")) : "현재 정답: 없음";
+    var pt=document.getElementById("pTeams"); pt.innerHTML="";
+    ids.forEach(function(id){
+      var isOwner=(owner===id);
+      var row=document.createElement("div"); row.className="flex items-center gap-2 rounded-xl px-1 "+(isOwner?"bg-emerald-900/40 ring-1 ring-emerald-400 py-1":"");
+      var nm=document.createElement("div"); nm.className="flex items-center gap-2 flex-1 min-w-0";
+      nm.innerHTML='<span style="width:16px;height:16px;border-radius:5px;background:'+(t[id].color||"#64748b")+'"></span><span class="font-bold truncate">'+esc(t[id].name||"팀")+(isOwner?' <span class="text-emerald-300 text-xs">✓</span>':'')+'</span>';
+      var ok=document.createElement("button"); ok.className="btn px-4 "+(isOwner?"bg-emerald-400 text-black ring-2 ring-white":"bg-emerald-600 text-white"); ok.textContent="정답"; ok.onclick=function(){ MoonStore.award(cur.cellKey,id); };
+      var no=document.createElement("button"); no.className="btn px-4 bg-rose-700 text-white"; no.textContent="오답"; no.onclick=function(){ MoonStore.wrong(cur.cellKey,id); };
+      row.appendChild(nm); row.appendChild(ok); row.appendChild(no); pt.appendChild(row);
     });
-    if(!Object.keys(t).length){ pt.innerHTML='<div class="text-xs text-slate-500 col-span-2">먼저 팀을 추가하세요</div>'; }
+    if(!ids.length){ pt.innerHTML='<div class="text-xs text-slate-500">먼저 팀 설정에서 팀을 추가하세요</div>'; }
+    document.getElementById("bonusAmt").textContent="+"+bonusAmt;
+    var bw=document.getElementById("bonusTeams"); bw.innerHTML="";
+    ids.forEach(function(id){
+      var on=!!bonusSel[id]; var b=document.createElement("button");
+      b.className="btn text-xs py-2 "+(on?"bg-amber-500 text-black":"bg-[#232b45] text-slate-200");
+      b.textContent=(on?"✓ ":"")+(t[id].name||"팀");
+      b.onclick=function(){ bonusSel[id]=!bonusSel[id]; renderPanel(); };
+      bw.appendChild(b);
+    });
   }
 
-  // events
   document.getElementById("addTeam").onclick=function(){
     var name=document.getElementById("teamName").value.trim(); if(!name)return;
-    var used=usedColors(); var color=pendingColor;
-    if(used.indexOf(color)>=0){ color=PALETTE.find(function(c){return used.indexOf(c)<0;})||pendingColor; }
-    MoonStore.addTeam(name, color); document.getElementById("teamName").value="";
+    var used=usedColors(); var color=pendingColor; if(used.indexOf(color)>=0){ color=PALETTE.find(function(c){return used.indexOf(c)<0;})||pendingColor; }
+    MoonStore.addTeam(name,color); document.getElementById("teamName").value="";
     pendingColor=PALETTE.find(function(c){return usedColors().indexOf(c)<0;})||PALETTE[0];
   };
-  document.getElementById("clearScores").onclick=function(){ if(confirm("모든 팀 점수와 보드 점령을 0으로 초기화할까요?")) MoonStore.resetScores(); };
+  document.getElementById("resetScores").onclick=function(){ if(confirm("정말 점수를 초기화할까요?\n(팀은 유지, 점수·보드 점령이 모두 0으로)")) MoonStore.resetScores(); };
+  document.getElementById("resetGame").onclick=function(){ if(confirm("정말 전체 초기화할까요?\n팀·점수·보드가 모두 삭제됩니다. 되돌릴 수 없어요.")) MoonStore.resetGame(); };
   document.getElementById("undo").onclick=function(){ MoonStore.undo(); };
-  document.getElementById("resetBoard").onclick=function(){ if(confirm("보드 점령/기록을 모두 초기화할까요? (팀은 유지)")) MoonStore.resetAll(); };
-  document.getElementById("pClose").onclick=function(){ MoonStore.closeCell(); };
-  document.getElementById("pClear").onclick=function(){ if(selKey) MoonStore.clearCell(selKey); };
+  document.getElementById("pCancel").onclick=function(){ if(state.current&&state.current.cellKey) MoonStore.cancelCell(state.current.cellKey); };
+  document.getElementById("pToggleShow").onclick=function(){ MoonStore.setShow(!(state.current&&state.current.show)); };
   document.getElementById("pToggleAns").onclick=function(){ MoonStore.showAnswer(!(state.current&&state.current.answer)); };
-  document.querySelectorAll("#pMusic button").forEach(function(b){ b.onclick=function(){ MoonStore.setReveal(parseInt(b.dataset.r,10)); }; });
+  document.getElementById("pPass").onclick=function(){ MoonStore.setShow(true); MoonStore.showAnswer(true); };
+  document.querySelectorAll("#panel [data-r]").forEach(function(b){ b.onclick=function(){ MoonStore.setShow(true); MoonStore.setReveal(parseInt(b.dataset.r,10)); }; });
+  document.getElementById("bonusMinus").onclick=function(){ bonusAmt=Math.max(5,bonusAmt-5); renderPanel(); };
+  document.getElementById("bonusPlus").onclick=function(){ bonusAmt=bonusAmt+5; renderPanel(); };
+  document.getElementById("pNext").onclick=function(){
+    var cur=state.current||{}; if(!cur.cellKey) return;
+    Object.keys(bonusSel).forEach(function(id){ if(bonusSel[id]) MoonStore.bonus(cur.cellKey,id,bonusAmt); });
+    bonusSel={}; MoonStore.closeCell();
+  };
 
-  MoonStore.subscribe(function(s){ state=s||{}; document.getElementById("conn").textContent="연결됨"; document.getElementById("conn").className="text-xs text-emerald-400";
-    renderRounds(); renderPalette(); renderTeams(); renderMiniBoard(); renderPanel(); });
+  MoonStore.subscribe(function(s){ state=s||{};
+    var c=document.getElementById("conn"); c.textContent="● 연결됨"; c.className="text-xs text-emerald-400 font-semibold";
+    renderTabs(); renderPalette(); renderTeams(); renderRound(); renderPanel();
+  });
+  syncView();
 })();
 </script>
 </body>
