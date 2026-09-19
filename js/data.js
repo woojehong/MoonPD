@@ -230,3 +230,21 @@ window.MOONPD_DATA.rounds[0].categories[0].questions[10] = { type:"image", clue:
   R.categories.forEach(function(c){ if(nm[c.id]) c.name=nm[c.id]; });
   var c=R.categories.find(function(x){return x.id==="c_2026";}); if(c&&c.questions[50]) c.questions[50].artist="최예나";
 })();
+// 90년대/00년대 링크·재생시각 배치 반영(2026-09-19)
+(function(){ var R=window.MOONPD_DATA.rounds.find(function(r){return r.id==="r2";});
+  function C(cid){ return R.categories.find(function(x){return x.id===cid;}); }
+  function S(cid,t,patch){ var c=C(cid); if(c&&c.questions[t]) Object.assign(c.questions[t],patch); }
+  // 90s
+  S("c_90",10,{start:5,ansStart:64});
+  S("c_90",20,{youtubeId:"gJqCO8E63-s",start:0,ansYoutubeId:"gJqCO8E63-s",ansStart:85});
+  S("c_90",30,{start:0,ansStart:59});
+  S("c_90",40,{start:2,ansStart:75});
+  // 하여가 -> 난 알아요 (같은 서태지와 아이들)
+  S("c_90",50,{clue:"",answer:["난 알아요","I Know"],youtubeId:"0zqjMTVKtaE",start:0,ansYoutubeId:"OEDHEzs5kyk",ansStart:86});
+  // 00s
+  S("c_00",10,{start:0,ansStart:64});
+  S("c_00",20,{youtubeId:"YP6Mck77J2c",start:0,ansYoutubeId:"HtJS32n6LNQ",ansStart:51});
+  S("c_00",30,{youtubeId:"eCMhO5P8QpI",start:0,ansYoutubeId:"j492N1OX47I",ansStart:90});
+  S("c_00",40,{youtubeId:"P3Gde3RwTzA",start:0,ansYoutubeId:"P3Gde3RwTzA",ansStart:70}); // 어머나: 제공Q링크(UYif0n6vzuU) 임베드불가라 정답링크로 임시대체
+  S("c_00",50,{youtubeId:"OHJle2J3RTA",start:0,ansYoutubeId:"WvJb1PtpHB4",ansStart:104});
+})();
