@@ -198,3 +198,7 @@ window.MOONPD_DATA.rounds[0].categories[0].questions[10] = { type:"image", clue:
   var c=R.categories.find(function(x){return x.id==="c_pre80";});
   c.questions[30].clue="이론"; c.questions[50].clue="통기타";
 })();
+// 80년대이전 노부부(50) 제시어 통기타 → 가객
+(function(){ var R=window.MOONPD_DATA.rounds.find(function(r){return r.id==="r2";});
+  R.categories.find(function(x){return x.id==="c_pre80";}).questions[50].clue="가객";
+})();
