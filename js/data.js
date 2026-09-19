@@ -248,3 +248,8 @@ window.MOONPD_DATA.rounds[0].categories[0].questions[10] = { type:"image", clue:
   S("c_00",40,{youtubeId:"P3Gde3RwTzA",start:0,ansYoutubeId:"P3Gde3RwTzA",ansStart:70}); // 어머나: 제공Q링크(UYif0n6vzuU) 임베드불가라 정답링크로 임시대체
   S("c_00",50,{youtubeId:"OHJle2J3RTA",start:0,ansYoutubeId:"WvJb1PtpHB4",ansStart:104});
 })();
+// 난 알아요 제시어(지석진) 반영(2026-09-19)
+(function(){ var R=window.MOONPD_DATA.rounds.find(function(r){return r.id==="r2";});
+  var c=R.categories.find(function(x){return x.id==="c_90";});
+  if(c&&c.questions[50]) c.questions[50].clue="지석진";
+})();
