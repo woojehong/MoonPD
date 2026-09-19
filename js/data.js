@@ -188,3 +188,8 @@ window.MOONPD_DATA.rounds[0].categories[0].questions[10] = { type:"image", clue:
   c.questions[40]={type:"music",clue:"Find me",answer:["Somebody to Love","썸바디 투 러브"],youtubeId:"kijpcUv-b8M",start:0,ansYoutubeId:"kijpcUv-b8M",ansStart:0};
   c.questions[50]={type:"music",clue:"",answer:["어느 60대 노부부 이야기","60대 노부부 이야기"],youtubeId:"llYG9PWOSnU",start:0,ansYoutubeId:"llYG9PWOSnU",ansStart:0};
 })();
+// 80년대이전 30점: 잊혀진계절 → 붉은 노을(이문세, NfuELl2KZHM). 문제·정답 동일링크 0초, 제시어 미정.
+(function(){ var R=window.MOONPD_DATA.rounds.find(function(r){return r.id==="r2";});
+  var c=R.categories.find(function(x){return x.id==="c_pre80";});
+  c.questions[30]={type:"music",clue:"",answer:["붉은 노을"],youtubeId:"NfuELl2KZHM",start:0,ansYoutubeId:"NfuELl2KZHM",ansStart:0};
+})();
