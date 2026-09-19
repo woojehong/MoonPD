@@ -174,3 +174,8 @@ window.MOONPD_DATA.rounds[0].categories[0].questions[10] = { type:"image", clue:
   var c=R.categories.find(function(x){return x.id==="c_20";});
   c.questions.bonus={ type:"music", clue:"", answer:["퀸카","Queencard","퀸카 (Queencard)"], youtubeId:"X3mCgkh0VX4", start:0, ansYoutubeId:"7HDeem-JaSY", ansStart:0, benefit:"특별 혜택 (추후 지정)" };
 })();
+// 20년대 퀸카 보너스 혜택 멘트 지정
+(function(){ var R=window.MOONPD_DATA.rounds.find(function(r){return r.id==="r2";});
+  var c=R.categories.find(function(x){return x.id==="c_20";});
+  if(c&&c.questions.bonus) c.questions.bonus.benefit="안무를 가장 잘 따라 하는 '남자'의 팀에게 상품을 드립니다";
+})();
