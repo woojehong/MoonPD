@@ -36,8 +36,9 @@
       this.closeCell();
     },
     openCell: function (cellKey) {
-      base.child("current").set({ cellKey: cellKey, reveal: 0, answer: false, show: false });
-      base.child("used/" + cellKey).set(true);
+      var u = { current: { cellKey: cellKey, reveal: 0, answer: false, show: false } };
+      u["used/" + cellKey] = true;
+      base.update(u);
     },
     setShow: function (v) { base.child("current/show").set(!!v); },
     closeCell: function () {

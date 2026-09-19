@@ -149,8 +149,11 @@
           else { back.style.background="transparent"; }
           var post=document.createElement("div"); post.className="postit"+(col==="bonus"?" bonus":"");
           if(isUsed){
-            if(prevUsed[key]||prevOwners[key]||!booted){ post.classList.add("gone"); }
-            else { playFlip(); (function(p){ requestAnimationFrame(function(){ requestAnimationFrame(function(){ p.classList.add("peel"); }); }); setTimeout(function(){ p.classList.add("gone"); },1200); })(post); }
+            var peeling=peelStart[key] && (Date.now()-peelStart[key]<1300);
+            if(!booted || prevOwners[key]){ post.classList.add("gone"); }
+            else if(!prevUsed[key]){ peelStart[key]=Date.now(); playFlip(); (function(p){ requestAnimationFrame(function(){ requestAnimationFrame(function(){ p.classList.add("peel"); }); }); setTimeout(function(){ p.classList.add("gone"); },1200); })(post); }
+            else if(peeling){ (function(p,rem){ requestAnimationFrame(function(){ requestAnimationFrame(function(){ p.classList.add("peel"); }); }); setTimeout(function(){ p.classList.add("gone"); },rem); })(post,Math.max(150,1300-(Date.now()-peelStart[key]))); }
+            else { post.classList.add("gone"); }
           }
           cell.appendChild(back); cell.appendChild(post); board.appendChild(cell);
         });
@@ -158,7 +161,7 @@
       prevOwners=Object.assign({},owners); prevUsed=Object.assign({},used); booted=true;
     }
 
-    var lastCellKey="", lastReveal=-1, lastStage="";
+    var lastCellKey="", lastReveal=-1, lastStage="", revealKey="", revealTimer=null, peelStart={};
     function buildProblem(info){
       var body=document.getElementById("qBody"); body.innerHTML=""; var q=info.q;
       if(q.type==="music"){ body.appendChild(musicView()); setupMusic(q); }
@@ -192,21 +195,28 @@
     }
     function renderCurrent(){
       var cur=state.current||{}; var ov=document.getElementById("qOverlay");
-      if(!cur.cellKey){ ov.classList.add("hidden"); ov.classList.remove("flex"); stopMusic(); document.getElementById("qBody").innerHTML=""; lastCellKey=""; lastReveal=-1; lastStage=""; return; }
+      if(!cur.cellKey){ ov.classList.add("hidden"); ov.classList.remove("flex"); ov.classList.remove("clue-mode"); stopMusic(); document.getElementById("qBody").innerHTML=""; lastCellKey=""; lastReveal=-1; lastStage=""; clearTimeout(revealTimer); revealKey=""; return; }
       var info=findQuestion(cur.cellKey); if(!info) return;
       var isNew=(cur.cellKey!==lastCellKey);
-      if(isNew){ ov.classList.add("hidden"); ov.classList.remove("flex");
-        setTimeout(function(){ if((state.current&&state.current.cellKey)===cur.cellKey){ ov.classList.remove("hidden"); ov.classList.add("flex"); retriggerGrow(); } }, 3400);
-      } else { ov.classList.remove("hidden"); ov.classList.add("flex"); }
-      document.getElementById("qMeta").textContent=info.cat.name+" · "+(info.points==="bonus"?"보너스":info.points+"점");
       var show=!!cur.show, ans=!!cur.answer;
+      var stage = (!show && !ans) ? "clue" : (ans ? "answer" : "problem");
+      document.getElementById("qMeta").textContent=info.cat.name+" · "+(info.points==="bonus"?"보너스":info.points+"점");
       var clueEl=document.getElementById("qClue");
       if(info.q.clue && !ans){ clueEl.innerHTML='<div class="clabel">제시어</div><div class="cval"></div>'; clueEl.querySelector(".cval").textContent=info.q.clue; clueEl.classList.remove("hidden","big","small");
         var smallClue = show && (info.q.type==="image"||info.q.type==="zoom"||info.q.type==="scene");
         clueEl.classList.add(smallClue?"small":"big"); }
       else { clueEl.classList.add("hidden"); }
-      var stage = (!show && !ans) ? "clue" : (ans ? "answer" : "problem");
-      if(stage==="clue"){ ov.classList.add("clue-mode"); } else { ov.classList.remove("clue-mode"); }
+      if(stage==="clue"){
+        ov.classList.add("clue-mode");
+        if(revealKey!==cur.cellKey){
+          revealKey=cur.cellKey; clearTimeout(revealTimer);
+          ov.classList.add("hidden"); ov.classList.remove("flex");
+          revealTimer=setTimeout(function(){ var c=state.current||{}; if(c.cellKey===cur.cellKey && !c.show && !c.answer){ ov.classList.remove("hidden"); ov.classList.add("flex"); retriggerGrow(); } }, 3400);
+        }
+      } else {
+        ov.classList.remove("clue-mode"); clearTimeout(revealTimer); revealKey="";
+        ov.classList.remove("hidden"); ov.classList.add("flex");
+      }
       if(isNew || stage!==lastStage){
         if(stage==="clue"){ stopMusic(); document.getElementById("qBody").innerHTML=""; }
         else if(stage==="problem"){ buildProblem(info); }
