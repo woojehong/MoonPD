@@ -38,9 +38,13 @@
   .cell .postit.bonus{background:#f5c542}
   .cell .postit.peel{transform:perspective(760px) rotateX(108deg) translateY(-34%) scale(.98);opacity:0}
   .cell .postit.gone{display:none}
-  #qClue{font-weight:800;color:#ffe28a;text-shadow:0 4px 16px rgba(0,0,0,.6)}
-  #qClue.big{font-size:clamp(3rem,13vw,13rem);line-height:1.05}
-  #qClue.small{font-size:clamp(1.4rem,4vw,3rem);margin-bottom:1.2rem}
+  #qClue{font-weight:800;color:#ffe28a;text-shadow:0 4px 16px rgba(0,0,0,.6);display:flex;flex-direction:column;align-items:center}
+  #qClue .clabel{font-weight:700;color:#ffd15a;opacity:.7;letter-spacing:.2em;font-size:clamp(1rem,2.6vw,1.9rem)}
+  #qClue.big .clabel{margin-bottom:1.4rem}
+  #qClue.big .cval{font-size:clamp(2.4rem,10vw,10rem);line-height:1.05}
+  #qClue.small{margin-bottom:1.2rem}
+  #qClue.small .clabel{font-size:clamp(.8rem,1.8vw,1.2rem);margin-bottom:.5rem}
+  #qClue.small .cval{font-size:clamp(1.2rem,3.4vw,2.6rem);line-height:1.1}
   #qAnswer{position:absolute;inset:0;align-items:center;justify-content:center;pointer-events:none}
   #qAnswer .ans{font-size:clamp(3rem,12vw,11rem);font-weight:900;color:#fff;-webkit-text-stroke:4px #000;
     text-shadow:0 6px 22px rgba(0,0,0,.95),0 0 10px #000;background:rgba(0,0,0,.30);border-radius:20px;padding:.1em .35em}
@@ -183,8 +187,7 @@
       document.getElementById("qMeta").textContent=info.cat.name+" · "+(info.points==="bonus"?"보너스":info.points+"점");
       var show=!!cur.show, ans=!!cur.answer;
       var clueEl=document.getElementById("qClue");
-      var clueText = info.q.clue ? ("제시어 : "+info.q.clue) : "";
-      if(clueText && !ans){ clueEl.textContent=clueText; clueEl.classList.remove("hidden","big","small");
+      if(info.q.clue && !ans){ clueEl.innerHTML='<div class="clabel">제시어</div><div class="cval"></div>'; clueEl.querySelector(".cval").textContent=info.q.clue; clueEl.classList.remove("hidden","big","small");
         var smallClue = show && (info.q.type==="image"||info.q.type==="zoom"||info.q.type==="scene");
         clueEl.classList.add(smallClue?"small":"big"); }
       else { clueEl.classList.add("hidden"); }
