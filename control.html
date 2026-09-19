@@ -77,7 +77,8 @@
       <button data-r="5" class="btn bg-[#232b45] text-xs px-0">전체</button>
       <button id="pPass" class="btn bg-amber-600 text-black text-xs px-0">패스</button>
     </div>
-    <button id="pToggleAns" class="btn w-full bg-emerald-700 text-white mb-4">정답 공개</button>
+    <button id="pToggleAns" class="btn w-full bg-emerald-700 text-white mb-2">정답 공개</button>
+    <div id="pAnsHint" class="text-sm font-black text-emerald-300 bg-[#0b1020] rounded-lg px-3 py-2 mb-4 text-center leading-snug"></div>
 
     <div class="lbl mb-1">② 채점 <span class="normal-case text-slate-500 font-normal">· 정답=색칠+가산 / 오답=감점</span></div>
     <div id="pOwner" class="text-xs font-bold text-emerald-300 mb-2">현재 정답: 없음</div>
@@ -172,7 +173,8 @@
     if(cur.cellKey!==lastPanelKey){ bonusSel={}; lastPanelKey=cur.cellKey; }
     panel.classList.remove("hidden");
     document.getElementById("pMeta").textContent=info.c.name+" · "+(info.points==="bonus"?"보너스":info.points+"점");
-    document.getElementById("pInfo").textContent="제시어: "+(info.q.clue||"-")+(info.q.benefit?(" / 혜택: "+info.q.benefit):"")+" / 정답: "+((info.q.answer&&info.q.answer[0])||"");
+    document.getElementById("pInfo").textContent="제시어: "+(info.q.clue||"-")+(info.q.benefit?(" / 혜택: "+info.q.benefit):"");
+    document.getElementById("pAnsHint").textContent="✅ 정답: "+(info.q.artist?info.q.artist+" - ":"")+((info.q.answer&&info.q.answer[0])||"");
     document.getElementById("pToggleShow").textContent=cur.show?"문제 숨기기":"문제 공개";
     document.getElementById("pToggleAns").textContent=cur.answer?"정답 숨기기":"정답 공개";
     var t=state.teams||{}; var ids=teamIds(); var owner=(state.owners||{})[cur.cellKey];
