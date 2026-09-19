@@ -202,3 +202,12 @@ window.MOONPD_DATA.rounds[0].categories[0].questions[10] = { type:"image", clue:
 (function(){ var R=window.MOONPD_DATA.rounds.find(function(r){return r.id==="r2";});
   R.categories.find(function(x){return x.id==="c_pre80";}).questions[50].clue="가객";
 })();
+// 80년대이전 재생시각 지정(2026-09-19): 문제 start / 정답 ansStart
+(function(){ var R=window.MOONPD_DATA.rounds.find(function(r){return r.id==="r2";});
+  var c=R.categories.find(function(x){return x.id==="c_pre80";});
+  c.questions[40].start=6;   c.questions[40].ansStart=147; // Somebody to Love 문제6초/정답2:27
+  c.questions[20].start=0;   c.questions[20].ansStart=94;  // 비처럼 음악처럼 정답1:34
+  c.questions.bonus.start=0; c.questions.bonus.ansStart=25;// 아파트 정답0:25
+  c.questions[30].start=0;   c.questions[30].ansStart=30;  // 붉은 노을 정답0:30
+  c.questions[50].start=0;   c.questions[50].ansStart=83;  // 노부부 정답1:23
+})();
