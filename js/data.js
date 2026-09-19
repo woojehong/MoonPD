@@ -253,3 +253,8 @@ window.MOONPD_DATA.rounds[0].categories[0].questions[10] = { type:"image", clue:
   var c=R.categories.find(function(x){return x.id==="c_90";});
   if(c&&c.questions[50]) c.questions[50].clue="지석진";
 })();
+// 어머나 문제 시작 15초로 조정(2026-09-19)
+(function(){ var R=window.MOONPD_DATA.rounds.find(function(r){return r.id==="r2";});
+  var c=R.categories.find(function(x){return x.id==="c_00";});
+  if(c&&c.questions[40]) c.questions[40].start=15;
+})();
