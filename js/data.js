@@ -179,3 +179,12 @@ window.MOONPD_DATA.rounds[0].categories[0].questions[10] = { type:"image", clue:
   var c=R.categories.find(function(x){return x.id==="c_20";});
   if(c&&c.questions.bonus) c.questions.bonus.benefit="안무를 가장 잘 따라 하는 '남자'의 팀에게 상품을 드립니다";
 })();
+// 80년대 이전 카테고리 재구성(2026-09-19): 옛 명곡 위주(90년대와 결 다른). Hey Jude 링크교체+정답 동일0초.
+(function(){ var R=window.MOONPD_DATA.rounds.find(function(r){return r.id==="r2";});
+  var c=R.categories.find(function(x){return x.id==="c_pre80";});
+  c.questions[10]={type:"music",clue:"벨링엄",answer:["Hey Jude","헤이 주드"],youtubeId:"E5nFPKQ1d4I",start:0,ansYoutubeId:"E5nFPKQ1d4I",ansStart:0};
+  c.questions[20]={type:"music",clue:"통기타",answer:["비처럼 음악처럼"],youtubeId:"eYiDIeSk3Go",start:0,ansYoutubeId:"eYiDIeSk3Go",ansStart:0};
+  c.questions[30]={type:"music",clue:"",answer:["잊혀진 계절"],youtubeId:"nnPk87dV1LU",start:0,ansYoutubeId:"nnPk87dV1LU",ansStart:0};
+  c.questions[40]={type:"music",clue:"Find me",answer:["Somebody to Love","썸바디 투 러브"],youtubeId:"kijpcUv-b8M",start:0,ansYoutubeId:"kijpcUv-b8M",ansStart:0};
+  c.questions[50]={type:"music",clue:"",answer:["어느 60대 노부부 이야기","60대 노부부 이야기"],youtubeId:"llYG9PWOSnU",start:0,ansYoutubeId:"llYG9PWOSnU",ansStart:0};
+})();
