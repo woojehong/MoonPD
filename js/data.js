@@ -164,3 +164,8 @@ window.MOONPD_DATA.rounds[0].categories[0].questions[10] = { type:"image", clue:
 // 2026 50점 캐치캐치: 워크맨 영상 20:42(1242초)부터 (문제=정답 동일 영상)
 (function(){ var R=window.MOONPD_DATA.rounds.find(function(r){return r.id==="r2";}); var c=R.categories.find(function(x){return x.id==="c_2026";});
  c.questions[50]={type:"music",clue:"중견수",answer:["캐치캐치"],youtubeId:"E4hdF79wX-U",start:1242,ansYoutubeId:"E4hdF79wX-U",ansStart:1242}; })();
+// 제시어 추가(2026-30 소문의낙원=남매, 10년대-40 오늘부터우리는=스페인어)
+(function(){ var R=window.MOONPD_DATA.rounds.find(function(r){return r.id==="r2";});
+  function C(cid,t,v){ var c=R.categories.find(function(x){return x.id===cid;}); if(c&&c.questions[t]) c.questions[t].clue=v; }
+  C("c_2026",30,"남매"); C("c_10",40,"스페인어");
+})();
