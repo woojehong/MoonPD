@@ -80,6 +80,7 @@
     <button id="pToggleAns" class="btn w-full bg-emerald-700 text-white mb-2">정답 공개</button>
     <div id="pAnsHint" class="text-sm font-black text-emerald-300 bg-[#0b1020] rounded-lg px-3 py-2 mb-4 text-center leading-snug"></div>
 
+    <div id="scoreBlock">
     <div class="lbl mb-1">② 채점 <span class="normal-case text-slate-500 font-normal">· 정답=색칠+가산 / 오답=감점</span></div>
     <div id="pOwner" class="text-xs font-bold text-emerald-300 mb-2">현재 정답: 없음</div>
     <div id="pTeams" class="flex flex-col gap-2 mb-4"></div>
@@ -93,6 +94,7 @@
       </span>
     </div>
     <div id="bonusTeams" class="flex flex-wrap gap-2 mb-4"></div>
+    </div>
 
     <button id="pNext" class="btn w-full bg-[#5b6cff] text-white text-base py-4">다음으로 ▶</button>
   </div>
@@ -109,7 +111,7 @@
 
   function roundById(id){ return DATA.rounds.find(function(r){return r.id===id;})||DATA.rounds[0]; }
   function activeRound(){ return roundById(state.activeRound); }
-  function findQuestion(key){ var p=key.split("|"); var r=roundById(p[0]); var c=(r.categories||[]).find(function(x){return x.id===p[1];}); if(!c)return null; var q=c.questions[p[2]]; if(!q)return null; return {r:r,c:c,points:p[2],q:q}; }
+  function findQuestion(key){ var p=key.split("|"); var r=roundById(p[0]); if(p[1]==="__practice__"){ var pq=(r.practice||[])[+p[2]]; if(!pq)return null; return {r:r,c:{name:"연습문제",id:"__practice__"},points:"practice",q:pq}; } var c=(r.categories||[]).find(function(x){return x.id===p[1];}); if(!c)return null; var q=c.questions[p[2]]; if(!q)return null; return {r:r,c:c,points:p[2],q:q}; }
   function esc(s){ return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
   function usedColors(){ var t=state.teams||{}; return Object.keys(t).map(function(k){return t[k].color;}); }
   function teamIds(){ var t=state.teams||{}; return Object.keys(t).sort(function(a,b){return (t[a].ts||0)-(t[b].ts||0);}); }
@@ -165,6 +167,24 @@
         el.appendChild(b);
       });
     });
+    // 연습문제 행
+    var prac=r.practice||[];
+    if(prac.length){
+      var plab=document.createElement("div"); plab.className="text-[11px] font-bold text-sky-300 flex items-center justify-center text-center leading-tight px-0.5"; plab.textContent="연습"; el.appendChild(plab);
+      for(var pi=0; pi<cols.length; pi++){
+        if(pi<prac.length){
+          (function(idx){
+            var pkey=r.id+"|__practice__|"+idx; var pUsed=!!(used[pkey]||(owners[pkey]));
+            var b=document.createElement("button"); b.className="rounded-md py-2.5 text-xs font-black";
+            if(pUsed){ b.className+=" bg-[#0b1020] text-slate-600 border border-[#232b45]"; b.textContent="—"; }
+            else { b.className+=" bg-sky-600 text-white"; b.textContent="연습"+(idx+1); }
+            if(pkey===cur) b.className+=" ring-2 ring-indigo-400";
+            b.onclick=function(){ MoonStore.openCell(pkey); };
+            el.appendChild(b);
+          })(pi);
+        } else { var sp=document.createElement("div"); el.appendChild(sp); }
+      }
+    }
   }
   function renderPanel(){
     var cur=state.current||{}; var panel=document.getElementById("panel");
@@ -172,7 +192,9 @@
     var info=findQuestion(cur.cellKey); if(!info){ panel.classList.add("hidden"); return; }
     if(cur.cellKey!==lastPanelKey){ bonusSel={}; lastPanelKey=cur.cellKey; }
     panel.classList.remove("hidden");
-    document.getElementById("pMeta").textContent=info.c.name+" · "+(info.points==="bonus"?"보너스":info.points+"점");
+    var isPractice=(info.points==="practice");
+    document.getElementById("pMeta").textContent=info.c.name+(isPractice?" (점수 없음)":" · "+(info.points==="bonus"?"보너스":info.points+"점"));
+    document.getElementById("scoreBlock").style.display=isPractice?"none":"";
     document.getElementById("pInfo").textContent="제시어: "+(info.q.clue||"-")+(info.q.benefit?(" / 혜택: "+info.q.benefit):"");
     document.getElementById("pAnsHint").textContent="✅ 정답: "+(info.q.artist?info.q.artist+" - ":"")+((info.q.answer&&info.q.answer[0])||"");
     document.getElementById("pToggleShow").textContent=cur.show?"문제 숨기기":"문제 공개";

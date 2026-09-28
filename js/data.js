@@ -258,3 +258,54 @@ window.MOONPD_DATA.rounds[0].categories[0].questions[10] = { type:"image", clue:
   var c=R.categories.find(function(x){return x.id==="c_00";});
   if(c&&c.questions[40]) c.questions[40].start=15;
 })();
+// 대량 링크/재생시각 반영(2026-09-28)
+(function(){ var R=window.MOONPD_DATA.rounds.find(function(r){return r.id==="r2";});
+  function C(cid){ return R.categories.find(function(x){return x.id===cid;}); }
+  function S(cid,t,patch){ var c=C(cid); if(c&&c.questions[t]) Object.assign(c.questions[t],patch); }
+  // ~1990
+  S("c_pre80",10,{start:0,ansStart:0}); // Hey Jude 정답도 처음부터
+  // 90년대
+  S("c_90","bonus",{start:0,ansYoutubeId:"Hxvwpox-opY",ansStart:105}); // 깊은슬픔 정답 1:45
+  // 10년대
+  S("c_10",10,{youtubeId:"dwNrkaWPc5g",start:0,ansYoutubeId:"AAbokV76tkU",ansStart:35}); // 판타스틱베이비
+  S("c_10",20,{start:0,ansStart:32}); // 아주NICE
+  S("c_10",30,{youtubeId:"liTfD88dbCo",start:0,ansStart:56}); // Shape of You
+  S("c_10",40,{youtubeId:"4nkdpSsN4No",start:0,ansStart:36}); // 오늘부터우리는
+  S("c_10",50,{start:0,ansStart:58}); // 그건아마
+  // 20년대
+  S("c_20",10,{start:0,ansStart:78}); // 신호등 1:18
+  S("c_20",20,{start:0,ansStart:83}); // Blinding Lights 1:23
+  S("c_20",30,{start:0,ansStart:36}); // 러브어택
+  S("c_20",40,{youtubeId:"mnpQsM-tqQU",start:0,ansStart:95}); // 사건의지평선 1:35
+  S("c_20",50,{youtubeId:"VnWo9-Dioik",start:0,ansStart:100}); // ON 1:40
+  S("c_20","bonus",{youtubeId:"VOcb6ZHxSjc",start:0,ansStart:48}); // 퀸카
+  // 2026
+  S("c_2026",10,{start:0,ansStart:51}); // Golden
+  S("c_2026",20,{youtubeId:"STPvm_hgBsQ",start:0,ansStart:145}); // Blue Valentine 2:25
+  S("c_2026",30,{start:0,ansStart:74}); // 소문의낙원 1:14
+  S("c_2026",40,{start:0,ansYoutubeId:"qSYNCpb0Bzw",ansStart:43}); // REDRED
+  S("c_2026","bonus",{youtubeId:"uFuvYOzl0kg",start:0,ansYoutubeId:"3ZO5F5wUmBg",ansStart:119}); // Bad 1:59
+  // 클래식
+  S("c_classic",10,{youtubeId:"y0H0273o8Gw",start:0,ansYoutubeId:"y0H0273o8Gw",ansStart:0}); // 봄
+  S("c_classic",20,{start:0,ansStart:0}); // 운명
+  S("c_classic",30,{youtubeId:"1c8HrWvNIZw",start:0,ansYoutubeId:"tosQj7d58SU",ansStart:55}); // 백조의호수
+  S("c_classic",40,{start:0,ansYoutubeId:"B7mgL6P6bmE",ansStart:0,answer:["신세계 교향곡","신세계로부터","교향곡 9번 신세계로부터"]}); // 신세계
+  S("c_classic",50,{youtubeId:"pUcuW2OUdZY",start:0,ansYoutubeId:"pUcuW2OUdZY",ansStart:0}); // 송어
+  S("c_classic","bonus",{youtubeId:"RTqiyJ1lkIE",start:0,ansYoutubeId:"RTqiyJ1lkIE",ansStart:102}); // 캐논 1:42
+  // OST
+  S("c_ost",10,{start:0,ansStart:55}); // Let It Go
+  S("c_ost",20,{youtubeId:"ChNJ_FMtSnk",start:0,ansYoutubeId:"GC_mV1IpjWA",ansStart:35}); // Under the Sea
+  S("c_ost",30,{start:0,ansStart:14}); // Toy Story
+  S("c_ost",40,{youtubeId:"5BONQ39cP9k",start:0,ansYoutubeId:"rGRC_Nf8fww",ansStart:98}); // 디지몬 1:38
+  S("c_ost",50,{youtubeId:"NXt-YY3Xt8Q",start:0,ansYoutubeId:"tpRzwh5OBs0",ansStart:167}); // 인생의회전목마 2:47
+  S("c_ost","bonus",{youtubeId:"QhX4Cdv4qIk",start:26,ansYoutubeId:"QhX4Cdv4qIk",ansStart:26}); // 아기상어 슈퍼히어로 26초
+})();
+// 연습문제 3칸 (문제판 맨 아래). 곡 링크·제시어는 대표님이 지정.
+(function(){
+  var r2=window.MOONPD_DATA.rounds.find(function(r){return r.id==="r2";});
+  r2.practice=[
+    {type:"music",clue:"연습문제 ①",answer:["연습곡 1"],artist:"",youtubeId:"",start:0,ansYoutubeId:"",ansStart:0},
+    {type:"music",clue:"연습문제 ②",answer:["연습곡 2"],artist:"",youtubeId:"",start:0,ansYoutubeId:"",ansStart:0},
+    {type:"music",clue:"연습문제 ③",answer:["연습곡 3"],artist:"",youtubeId:"",start:0,ansYoutubeId:"",ansStart:0}
+  ];
+})();

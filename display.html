@@ -62,7 +62,9 @@
   #qOverlay.clue-mode #qClue .cval{color:#141414}
   @keyframes clueGrow{from{transform:scale(.18);opacity:0}60%{opacity:1}to{transform:scale(1);opacity:1}}
   #qClue.grow{animation:clueGrow .7s cubic-bezier(.2,.85,.3,1)}
-</style>
+.postit.practice{background:linear-gradient(145deg,#bfe3ff,#8ec5f0);color:#0b2540}
+    .practice-l{color:#8ec5f0}
+  </style>
 </head>
 <body class="overflow-hidden">
   <div id="startOverlay" class="fixed inset-0 z-[60] flex flex-col items-center justify-center" style="background:#8f6231">
@@ -106,6 +108,7 @@
     function roundById(id){ return DATA.rounds.find(function(r){return r.id===id;})||DATA.rounds[0]; }
     function findQuestion(cellKey){
       if(!cellKey) return null; var p=cellKey.split("|"); var r=roundById(p[0]);
+      if(p[1]==="__practice__"){ var pq=(r.practice||[])[+p[2]]; if(!pq) return null; return {round:r,cat:{name:"연습문제",id:"__practice__"},points:"practice",q:pq}; }
       var cat=(r.categories||[]).find(function(c){return c.id===p[1];}); if(!cat) return null;
       var q=cat.questions[p[2]]; if(!q) return null; return {round:r,cat:cat,points:p[2],q:q};
     }
@@ -127,12 +130,20 @@
       });
     }
 
+    function applyPeel(post,key){
+      var peeling=peelStart[key] && (Date.now()-peelStart[key]<1300);
+      if(!booted || prevOwners[key]){ post.classList.add("gone"); }
+      else if(!prevUsed[key]){ peelStart[key]=Date.now(); playFlip(); (function(p){ requestAnimationFrame(function(){ requestAnimationFrame(function(){ p.classList.add("peel"); }); }); setTimeout(function(){ p.classList.add("gone"); },1200); })(post); }
+      else if(peeling){ (function(p,rem){ requestAnimationFrame(function(){ requestAnimationFrame(function(){ p.classList.add("peel"); }); }); setTimeout(function(){ p.classList.add("gone"); },rem); })(post,Math.max(150,1300-(Date.now()-peelStart[key]))); }
+      else { post.classList.add("gone"); }
+    }
     function renderBoard(){
       var r=roundById(state.activeRound);
       document.getElementById("roundTitle").textContent=r.name;
       var cats=r.categories||[]; var board=document.getElementById("board");
       board.style.gridTemplateColumns="minmax(64px,0.85fr) repeat("+COLS.length+",1fr)";
-      board.style.gridTemplateRows="auto repeat("+cats.length+",minmax(0,1fr))";
+      var pracList=r.practice||[];
+      board.style.gridTemplateRows="auto repeat("+(cats.length+(pracList.length?1:0))+",minmax(0,1fr))";
       board.innerHTML="";
       var corner=document.createElement("div"); corner.className="hcell corner"; corner.textContent="카테고리"; board.appendChild(corner);
       COLS.forEach(function(col){ var h=document.createElement("div"); h.className="hcell "+(col==="bonus"?"bonus":"pts"); h.textContent=(col==="bonus"?"보너스":col); board.appendChild(h); });
@@ -148,16 +159,27 @@
           else if(isUsed){ back.style.background="rgba(0,0,0,.10)"; }
           else { back.style.background="transparent"; }
           var post=document.createElement("div"); post.className="postit"+(col==="bonus"?" bonus":"");
-          if(isUsed){
-            var peeling=peelStart[key] && (Date.now()-peelStart[key]<1300);
-            if(!booted || prevOwners[key]){ post.classList.add("gone"); }
-            else if(!prevUsed[key]){ peelStart[key]=Date.now(); playFlip(); (function(p){ requestAnimationFrame(function(){ requestAnimationFrame(function(){ p.classList.add("peel"); }); }); setTimeout(function(){ p.classList.add("gone"); },1200); })(post); }
-            else if(peeling){ (function(p,rem){ requestAnimationFrame(function(){ requestAnimationFrame(function(){ p.classList.add("peel"); }); }); setTimeout(function(){ p.classList.add("gone"); },rem); })(post,Math.max(150,1300-(Date.now()-peelStart[key]))); }
-            else { post.classList.add("gone"); }
-          }
+          if(isUsed){ applyPeel(post,key); }
           cell.appendChild(back); cell.appendChild(post); board.appendChild(cell);
         });
       });
+      // 연습문제 행 (맨 아래)
+      if(pracList.length){
+        var pl=document.createElement("div"); pl.className="lcell practice-l"; pl.textContent="연습문제"; board.appendChild(pl);
+        for(var pi=0; pi<COLS.length; pi++){
+          if(pi<pracList.length){
+            var pkey=r.id+"|__practice__|"+pi; var pUsed=!!(used[pkey]||owners[pkey]);
+            var pcell=document.createElement("div"); pcell.className="cell"; if(pkey===curKey) pcell.className+=" ring-4 ring-indigo-400 rounded-lg";
+            var pback=document.createElement("div"); pback.className="back";
+            if(pkey===curKey && clueStage){ pback.className="back clueface"; pback.textContent=pracList[pi].clue||""; }
+            else if(pUsed){ pback.style.background="rgba(0,0,0,.10)"; }
+            else { pback.style.background="transparent"; }
+            var ppost=document.createElement("div"); ppost.className="postit practice"; ppost.textContent="연습 "+(pi+1);
+            if(pUsed){ applyPeel(ppost,pkey); }
+            pcell.appendChild(pback); pcell.appendChild(ppost); board.appendChild(pcell);
+          } else { var sp=document.createElement("div"); sp.className="cell"; sp.style.visibility="hidden"; board.appendChild(sp); }
+        }
+      }
       prevOwners=Object.assign({},owners); prevUsed=Object.assign({},used); booted=true;
     }
 
