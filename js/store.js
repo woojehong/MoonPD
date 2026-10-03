@@ -36,22 +36,26 @@
       this.closeCell();
     },
     openCell: function (cellKey) {
-      var u = { current: { cellKey: cellKey, reveal: 0, answer: false, show: false } };
+      var u = { current: { cellKey: cellKey, reveal: 0, answer: false, show: false, reward: false, mission: false, paused: false } };
       u["used/" + cellKey] = true;
       base.update(u);
     },
     setShow: function (v) { base.child("current/show").set(!!v); },
+    setReward: function (v) { base.child("current/reward").set(!!v); },
+    setFinale: function (v) { base.child("finale").set(!!v); },
+    setPaused: function (v) { base.child("current/paused").set(!!v); },
+    setMission: function (v) { base.child("current/mission").set(!!v); },
     closeCell: function () {
-      base.child("current").set({ cellKey: "", reveal: 0, answer: false, show: false });
+      base.child("current").set({ cellKey: "", reveal: 0, answer: false, show: false, reward: false, mission: false, paused: false });
     },
     cancelCell: function (cellKey) {
       base.child("owners/" + cellKey).once("value").then(function (os) {
-        var updates = { current: { cellKey: "", reveal: 0, answer: false, show: false } };
+        var updates = { current: { cellKey: "", reveal: 0, answer: false, show: false, reward: false, mission: false, paused: false } };
         if (!os.val()) { updates["used/" + cellKey] = null; }
         base.update(updates);
       });
     },
-    setReveal: function (n) { base.child("current/reveal").set(n); },
+    setReveal: function (n) { base.child("current").update({ reveal: n, revealTick: Date.now() }); },
     showAnswer: function (v) { base.child("current/answer").set(!!v); },
 
     // ----- scoring -----
@@ -151,16 +155,16 @@
     },
 
     resetGame: function () {
-      base.update({ teams: null, owners: null, used: null, log: null, current: { cellKey: "", reveal: 0, answer: false } });
+      base.update({ teams: null, owners: null, used: null, log: null, finale: null, current: { cellKey: "", reveal: 0, answer: false } });
     },
     resetAll: function () {
-      base.update({ current: { cellKey: "", reveal: 0, answer: false }, owners: null, used: null, log: null });
+      base.update({ current: { cellKey: "", reveal: 0, answer: false }, owners: null, used: null, log: null, finale: null });
     },
     resetScores: function () {
       base.child("teams").once("value").then(function (ts) {
         var teams = ts.val() || {}; var updates = {};
         Object.keys(teams).forEach(function (id) { updates["teams/" + id + "/score"] = 0; });
-        updates["owners"] = null; updates["used"] = null; updates["log"] = null;
+        updates["owners"] = null; updates["used"] = null; updates["log"] = null; updates["finale"] = null;
         base.update(updates);
       });
     }

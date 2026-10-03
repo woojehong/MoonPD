@@ -9,35 +9,38 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@latest/dist/web/static/pretendard.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/twemoji.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/canvas-confetti/1.9.3/confetti.browser.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap" rel="stylesheet">
 <style>
   html,body{height:100%}
-  body{color:#2a1c10;font-family:'Gaegu','Pretendard',system-ui,sans-serif;
-    background:#9c6a37;
-    background-image:
-      repeating-linear-gradient(90deg, rgba(0,0,0,.10) 0 1px, transparent 1px 118px),
-      repeating-linear-gradient(90deg, rgba(255,255,255,.05) 0 1px, transparent 1px 26px),
-      linear-gradient(180deg,#b9814a,#8f6231);}
-  #board{gap:8px;background:#f0e7cf;padding:12px;border-radius:14px;box-shadow:0 14px 40px rgba(0,0,0,.45);
-    margin:auto;max-width:min(97vw,1000px);width:100%;height:100%;max-height:100%}
-  .hcell{display:flex;align-items:center;justify-content:center;background:#fdfaf0;border:1px solid #d8cdb0;border-radius:6px;min-height:60px}
-  .hcell.pts{font-size:clamp(1.4rem,3vw,2.6rem);font-weight:700;color:#222}
-  .hcell.corner{font-size:clamp(.9rem,1.8vw,1.4rem);color:#b91c1c;font-weight:700}
-  .hcell.bonus{color:#b45309;background:#fff5da;border-color:#e6c675;font-size:clamp(1rem,2vw,1.7rem);font-weight:700}
-  .lcell{display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.05;white-space:nowrap;overflow:hidden;
-    background:#fdfaf0;border:2px solid #dc2626;border-radius:6px;color:#111;
-    font-size:clamp(.8rem,1.7vw,1.5rem);font-weight:700;padding:.15rem .3rem}
+  body{color:#fff;font-family:'Gowun Dodum','Pretendard',system-ui,sans-serif;word-break:keep-all;
+    background:
+      repeating-linear-gradient(90deg,rgba(0,0,0,.14),rgba(0,0,0,.14) 2px,transparent 2px,transparent 52px),
+      linear-gradient(180deg,#8a5e38,#6e4a2b);}
+  #board{gap:clamp(5px,1vw,10px);background:transparent;padding:4px;
+    margin:0 auto;aspect-ratio:3/4;width:min(96vw,calc((100svh - 150px) * 0.75));max-width:96vw}
+  .hcell{display:flex;align-items:center;justify-content:center;background:transparent;border:0}
+  .hcell.pts{font-size:clamp(1.3rem,3vw,2.4rem);font-weight:800;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.4)}
+  .hcell.corner{font-size:clamp(.85rem,1.7vw,1.3rem);color:#ffd7a0;font-weight:800}
+  .hcell.bonus{color:#ffe08a;background:transparent;border:0;font-size:clamp(1rem,2.1vw,1.7rem);font-weight:800;text-shadow:0 2px 6px rgba(0,0,0,.4)}
+  .lcell{display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.1;white-space:nowrap;overflow:hidden;
+    background:transparent;border:0;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.45);
+    font-size:clamp(.85rem,1.8vw,1.45rem);font-weight:800;padding:.1rem .2rem}
   .cell{position:relative;min-height:0}
   .cell .back{position:absolute;inset:0;border-radius:8px;display:flex;align-items:center;justify-content:center;text-align:center;
-    font-size:clamp(.55rem,1.35vw,1.05rem);color:#fff;font-weight:800;line-height:1.12;padding:2px 4px;overflow:hidden;box-shadow:inset 0 0 0 3px rgba(0,0,0,.10)}
-  .cell .postit{position:absolute;inset:0;background:#fb469b;border-radius:5px;
-    box-shadow:0 7px 12px rgba(0,0,0,.28), inset 0 -10px 16px rgba(0,0,0,.10);
+    font-size:clamp(.55rem,1.35vw,1.05rem);color:#fff;font-weight:800;line-height:1.12;padding:2px 4px;overflow:hidden;flex-direction:column;box-shadow:inset 0 0 0 3px rgba(0,0,0,.10)}
+  .cell .postit{position:absolute;inset:0;background:linear-gradient(170deg,#ffd7e4,#ff9fbf);border-radius:9px;
+    box-shadow:0 5px 11px rgba(0,0,0,.22);
     transition:transform 1.15s cubic-bezier(.3,.7,.35,1),opacity 1.15s ease;transform-origin:top center;backface-visibility:hidden}
-  .cell .postit::after{content:"";position:absolute;left:50%;top:-7px;transform:translateX(-50%) rotate(-1.5deg);
-    width:44%;height:15px;background:rgba(255,255,255,.4);border-radius:2px;box-shadow:0 1px 2px rgba(0,0,0,.15)}
-  .cell .postit.bonus{background:#f5c542}
+  .cell .postit::after{content:"";position:absolute;left:50%;top:-5px;transform:translateX(-50%);
+    width:38%;height:12px;background:rgba(255,255,255,.5);border-radius:2px}
+  .cell .postit.bonus{background:linear-gradient(170deg,#ffe9a8,#ffcf5a)}
   .cell .postit.peel{transform:perspective(760px) rotateX(108deg) translateY(-34%) scale(.98);opacity:0}
   .cell .postit.gone{display:none}
+  .cell .back .bk-art{font-size:.82em;opacity:.92;line-height:1.15}
+  .cell .back .bk-ttl{font-weight:900;line-height:1.12}
   .cell .back.clueface{background:#fdfaf0;color:#141414;font-weight:800;font-size:clamp(.7rem,1.8vw,1.5rem)}
   #qClue{font-weight:800;color:#ffe28a;text-shadow:0 4px 16px rgba(0,0,0,.6);display:flex;flex-direction:column;align-items:center}
   #qClue .clabel{font-weight:700;color:#ffd15a;opacity:.7;letter-spacing:.2em;font-size:clamp(1rem,2.6vw,1.9rem)}
@@ -48,8 +51,8 @@
   #qClue.small .cval{font-size:clamp(1.2rem,3.4vw,2.6rem);line-height:1.1}
   .ansBox{display:flex;flex-direction:column;align-items:center;color:#6ee7b7}
   .ansBox .alabel{font-weight:700;opacity:.75;letter-spacing:.2em;font-size:clamp(1rem,2.4vw,1.7rem);margin-bottom:.9rem}
-  .ansBox .aartist{font-weight:800;opacity:.92;color:#a7f3d0;font-size:clamp(1.3rem,3vw,2.2rem);margin-bottom:.6rem}
-  .ansBox .aval{font-weight:900;font-size:clamp(2rem,4.5vw,3.4rem);line-height:1.12}
+  .ansBox .aartist{font-weight:800;opacity:.92;color:#a7f3d0;font-size:clamp(1.5rem,3.6vw,2.8rem);margin-bottom:.5rem}
+  .ansBox .aval{font-weight:900;font-size:clamp(2.6rem,7vw,5.5rem);line-height:1.1}
   #qAnswer{position:absolute;inset:0;align-items:center;justify-content:center;pointer-events:none}
   #qAnswer .ans{font-size:clamp(3rem,12vw,11rem);font-weight:900;color:#fff;-webkit-text-stroke:4px #000;
     text-shadow:0 6px 22px rgba(0,0,0,.95),0 0 10px #000;background:rgba(0,0,0,.30);border-radius:20px;padding:.1em .35em}
@@ -62,8 +65,31 @@
   #qOverlay.clue-mode #qClue .cval{color:#141414}
   @keyframes clueGrow{from{transform:scale(.18);opacity:0}60%{opacity:1}to{transform:scale(1);opacity:1}}
   #qClue.grow{animation:clueGrow .7s cubic-bezier(.2,.85,.3,1)}
-.postit.practice{background:linear-gradient(145deg,#bfe3ff,#8ec5f0);color:#0b2540}
+.postit.practice{background:linear-gradient(170deg,#cfeaff,#8ec5f0);color:#0b2540}
     .practice-l{color:#8ec5f0}
+  #qOverlay,.rewardWrap,.ansBox,#qClue,.cell .back,#qMeta,#roundTitle,.lcell{word-break:keep-all;overflow-wrap:break-word;text-wrap:balance}
+  .rewardWrap{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px;padding:20px}
+    .rewardWrap .rlabel{font-size:clamp(1.2rem,3vw,2rem);font-weight:800;color:#fcd34d;letter-spacing:.05em}
+    .rewardWrap .rname{font-size:clamp(2.8rem,8vw,6rem);font-weight:900;color:#fff;text-shadow:0 4px 20px rgba(0,0,0,.6);line-height:1.1}
+    .rewardWrap .rdesc{font-size:clamp(1rem,2.4vw,1.7rem);font-weight:600;color:#e2e8f0;max-width:82vw;line-height:1.45;margin-top:4px}
+    .rewardWrap .rmission{font-size:clamp(1rem,2.6vw,1.8rem);font-weight:700;color:#fde68a;max-width:82vw;line-height:1.4;margin-top:10px}
+    .rewardWrap .rmtag{display:inline-block;background:#f59e0b;color:#1a1200;font-weight:900;border-radius:8px;padding:1px 10px;margin-right:8px;font-size:.85em}
+    img.emoji{height:1em;width:1em;margin:0 .05em 0 .05em;vertical-align:-0.1em;display:inline-block}
+  @keyframes rankpop{0%{transform:scale(1)}30%{transform:scale(1.18)}100%{transform:scale(1)}}
+  .rankup{animation:rankpop .8s cubic-bezier(.3,.8,.3,1);box-shadow:0 0 0 2px #ffd54a,0 0 18px rgba(255,213,74,.8)!important}
+  #ansReward{position:fixed;left:50%;transform:translateX(-50%);bottom:clamp(10px,3vh,34px);z-index:45;width:min(92vw,900px);text-align:center;background:rgba(0,0,0,.5);border-radius:18px;padding:clamp(10px,1.8vh,18px) 22px;backdrop-filter:blur(4px)}
+  #ansReward .arname{font-size:clamp(1.3rem,3.2vw,2.2rem);font-weight:900;color:#ffe08a;text-shadow:0 3px 14px rgba(0,0,0,.9)}
+  #ansReward .rmission{margin-top:6px}
+  #finaleOverlay{position:fixed;inset:0;z-index:60;background:radial-gradient(circle at 50% 35%,rgba(30,20,60,.92),rgba(8,6,18,.97));align-items:center;justify-content:center;flex-direction:column;gap:18px;text-align:center}
+  #finaleOverlay .ftitle{font-size:clamp(2.2rem,6vw,4.5rem);font-weight:900;color:#ffe08a;text-shadow:0 4px 24px rgba(0,0,0,.7);letter-spacing:.02em}
+  #finaleOverlay .flist{display:flex;flex-direction:column;gap:clamp(8px,1.6vh,16px);width:min(90vw,620px)}
+  #finaleOverlay .frow{display:flex;align-items:center;gap:14px;background:rgba(255,255,255,.08);border-radius:16px;padding:clamp(10px,1.8vh,18px) 20px}
+  #finaleOverlay .frow .fmed{font-size:clamp(1.6rem,4vw,2.6rem);width:1.6em;text-align:center}
+  #finaleOverlay .frow .fsw{width:22px;height:22px;border-radius:7px;flex:0 0 auto}
+  #finaleOverlay .frow .fnm{flex:1;text-align:left;font-weight:800;font-size:clamp(1.2rem,3.2vw,2.2rem);color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #finaleOverlay .frow .fsc{font-weight:900;font-size:clamp(1.4rem,3.6vw,2.6rem);color:#ffe08a;font-variant-numeric:tabular-nums}
+  #finaleOverlay .frow.top1{background:linear-gradient(90deg,rgba(255,215,74,.28),rgba(255,215,74,.08));box-shadow:0 0 0 2px rgba(255,213,74,.6)}
+  #finaleOverlay .fhint{color:#cbd5e1;font-size:clamp(.9rem,2vw,1.2rem);margin-top:6px}
   </style>
 </head>
 <body class="overflow-hidden">
@@ -73,29 +99,35 @@
     <button id="startBtn" class="px-12 py-4 rounded-2xl text-lg font-bold" style="background:#fb469b;color:#fff">시작하기</button>
   </div>
 
-  <div id="scoreboard" class="fixed top-0 inset-x-0 z-50 flex flex-nowrap items-center gap-2 px-4 py-2 bg-black/70 backdrop-blur text-white overflow-x-auto" style="font-family:'Pretendard',system-ui,sans-serif"></div>
+  <div id="scoreboard" class="fixed top-0 inset-x-0 z-50 flex flex-nowrap items-center justify-center gap-2 px-4 py-2 text-white overflow-x-auto" style="font-family:'Gowun Dodum','Pretendard',system-ui,sans-serif"></div>
 
   <main class="h-screen flex flex-col pt-16 px-6 pb-6 gap-3">
-    <header class="flex items-center justify-between">
-      <h1 id="roundTitle" class="text-4xl text-white drop-shadow" style="font-weight:700">라운드</h1>
+    <header class="flex items-center justify-center">
+      <h1 id="roundTitle" class="text-4xl text-white drop-shadow" style="font-weight:700">🎵 음악 문제판</h1>
     </header>
     <section class="flex-1 min-h-0 overflow-hidden flex items-center justify-center">
       <div id="board" class="grid"></div>
     </section>
   </main>
 
-  <div id="qOverlay" class="fixed inset-0 z-40 hidden items-center justify-center bg-black/90 backdrop-blur" style="font-family:'Pretendard',system-ui,sans-serif">
-    <div class="w-full max-w-6xl mx-auto px-8 pt-20 pb-8 text-center text-white flex flex-col items-center justify-center" style="min-height:100vh">
+  <div id="qOverlay" class="fixed inset-0 z-40 hidden items-center justify-center bg-black/90 backdrop-blur" style="font-family:'Gowun Dodum','Pretendard',system-ui,sans-serif;overflow-y:auto">
+    <div id="ansReward" class="hidden"></div>
+    <div class="w-full max-w-6xl mx-auto px-8 pt-20 pb-10 text-center text-white flex flex-col items-center justify-center" style="min-height:100vh">
       <div id="qMeta" class="text-pink-300 text-2xl font-semibold mb-4"></div>
       <div id="qClue" class="hidden"></div>
-      <div id="qStage" class="relative w-full flex items-center justify-center" style="min-height:52vh">
-        <div id="qBody" class="flex items-center justify-center w-full"></div>
+      <div id="qStage" class="relative w-full flex items-center justify-center" style="min-height:40vh">
+        <div id="qBody" class="flex flex-col items-center justify-center w-full"></div>
         <div id="qAnswer" style="display:none"><span class="ans"></span></div>
       </div>
     </div>
   </div>
 
-  <div id="ytHolder" style="position:fixed;left:-9999px;top:-9999px;width:320px;height:180px"></div>
+  <div id="finaleOverlay" class="hidden" onclick="window.__finaleHide&&window.__finaleHide()" style="font-family:'Gowun Dodum','Pretendard',system-ui,sans-serif">
+    <div class="ftitle">🏆 최종 결과</div>
+    <div class="flist" id="finaleList"></div>
+    <div class="fhint">화면을 누르면 닫혀요</div>
+  </div>
+  <div id="ytHolder" style="position:fixed;right:0;bottom:0;width:120px;height:68px;opacity:.02;pointer-events:none;z-index:1"></div>
 
   <script src="js/firebase.js"></script>
   <script src="js/data.js"></script>
@@ -105,31 +137,78 @@
     var DATA=window.MOONPD_DATA, TIERS=DATA.pointTiers, COLS=TIERS.concat(["bonus"]), state={}, prevOwners={}, prevUsed={}, booted=false, audioCtx=null;
     var ytPlayer=null, ytReady=false, pauseTimer=null;
 
+    var TWOPT={base:'https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/',folder:'svg',ext:'.svg'};
+    function emoji(el){ try{ if(window.twemoji&&el) twemoji.parse(el,TWOPT); }catch(e){} }
     function roundById(id){ return DATA.rounds.find(function(r){return r.id===id;})||DATA.rounds[0]; }
     function findQuestion(cellKey){
       if(!cellKey) return null; var p=cellKey.split("|"); var r=roundById(p[0]);
-      if(p[1]==="__practice__"){ var pq=(r.practice||[])[+p[2]]; if(!pq) return null; return {round:r,cat:{name:"연습문제",id:"__practice__"},points:"practice",q:pq}; }
+      if(p[1]==="__practice__"){ var pq=(r.practice||[])[+p[2]]; if(!pq) return null; return {round:r,cat:{name:"연습",id:"__practice__"},points:"practice",q:pq}; }
       var cat=(r.categories||[]).find(function(c){return c.id===p[1];}); if(!cat) return null;
       var q=cat.questions[p[2]]; if(!q) return null; return {round:r,cat:cat,points:p[2],q:q};
     }
     function teamColor(id){ return (state.teams&&state.teams[id]&&state.teams[id].color)||"#64748b"; }
     function esc(s){ return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
 
+    var prevRank={}, lastFinale=undefined, finaleHidden=false, confTimer=null;
+    function nonPracticeAllUsed(){
+      var r=roundById("r2"); var used=state.owners?Object.assign({},state.used,state.owners):(state.used||{});
+      var all=true, any=false;
+      (r.categories||[]).forEach(function(c){ COLS.forEach(function(col){ any=true; var k=r.id+"|"+c.id+"|"+col; if(!used[k]) all=false; }); });
+      return any && all;
+    }
+    function startConfetti(){
+      if(confTimer || !window.confetti) return;
+      var end=Date.now()+9000;
+      confTimer=setInterval(function(){
+        if(Date.now()>end){ clearInterval(confTimer); confTimer=null; return; }
+        window.confetti({particleCount:40,spread:70,startVelocity:45,origin:{x:Math.random(),y:Math.random()*0.5},scalar:1.1});
+      },380);
+      window.confetti({particleCount:160,spread:120,startVelocity:55,origin:{y:0.4}});
+    }
+    function stopConfetti(){ if(confTimer){ clearInterval(confTimer); confTimer=null; } }
+    window.__finaleHide=function(){ finaleHidden=true; renderFinale(); };
+    function renderFinale(){
+      var ov=document.getElementById("finaleOverlay");
+      if(state.finale!==lastFinale){ finaleHidden=false; lastFinale=state.finale; }
+      var show=(!!state.finale) && !finaleHidden;
+      if(!show){ ov.classList.add("hidden"); ov.classList.remove("flex"); stopConfetti(); return; }
+      var teams=state.teams||{}; var arr=Object.keys(teams).map(function(id){return Object.assign({id:id},teams[id]);});
+      arr.sort(function(a,b){return (b.score||0)-(a.score||0)||(a.ts||0)-(b.ts||0);});
+      var med=["🥇","🥈","🥉"]; var list=document.getElementById("finaleList"); list.innerHTML="";
+      arr.forEach(function(t,i){
+        var row=document.createElement("div"); row.className="frow"+(i===0?" top1":"");
+        row.innerHTML='<div class="fmed">'+(med[i]||('<span style="font-size:.6em;color:#94a3b8">'+(i+1)+'</span>'))+'</div>'+
+          '<span class="fsw" style="background:'+(t.color||"#64748b")+'"></span>'+
+          '<div class="fnm">'+esc(t.name||"팀")+'</div>'+
+          '<div class="fsc">'+(t.score||0)+'</div>';
+        list.appendChild(row);
+      });
+      if(!arr.length) list.innerHTML='<div class="fhint">팀이 없어요</div>';
+      ov.classList.remove("hidden"); ov.classList.add("flex");
+      startConfetti();
+    }
     function renderScores(){
       var wrap=document.getElementById("scoreboard"); var teams=state.teams||{};
       var arr=Object.keys(teams).map(function(id){return Object.assign({id:id},teams[id]);});
       arr.sort(function(a,b){return (b.score||0)-(a.score||0)||(a.ts||0)-(b.ts||0);});
       wrap.innerHTML="";
-      if(!arr.length){ wrap.innerHTML='<span class="text-white/40 text-sm">팀 없음</span>'; return; }
-      arr.forEach(function(t){
-        var chip=document.createElement("div"); chip.className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/10";
+      if(!arr.length){ wrap.innerHTML='<span class="text-white/40 text-sm">팀 없음</span>'; prevRank={}; return; }
+      arr.forEach(function(t,i){
+        var up=(prevRank[t.id]!==undefined && i<prevRank[t.id]);
+        var chip=document.createElement("div"); chip.className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-black/40 backdrop-blur"+(up?" rankup":"");
         chip.innerHTML='<span style="width:16px;height:16px;border-radius:5px;background:'+(t.color||"#64748b")+'"></span>'+
           '<span class="font-semibold">'+esc(t.name||"팀")+'</span>'+
           '<span class="text-xl font-bold tabular-nums">'+(t.score||0)+'</span>';
         wrap.appendChild(chip);
       });
+      var nr={}; arr.forEach(function(t,i){ nr[t.id]=i; }); prevRank=nr;
     }
 
+    function fitText(el,floorPx){
+      if(!el) return; el.style.fontSize="";
+      var size=parseFloat(getComputedStyle(el).fontSize)||14; var tries=0;
+      while(tries<48 && size>floorPx && (el.scrollHeight>el.clientHeight+1 || el.scrollWidth>el.clientWidth+1)){ size-=1; el.style.fontSize=size+"px"; tries++; }
+    }
     function applyPeel(post,key){
       var peeling=peelStart[key] && (Date.now()-peelStart[key]<1300);
       if(!booted || prevOwners[key]){ post.classList.add("gone"); }
@@ -154,8 +233,8 @@
           var key=r.id+"|"+cat.id+"|"+col; var owner=owners[key]; var isUsed=!!(used[key]||owner); var qq=cat.questions[col]||{};
           var cell=document.createElement("div"); cell.className="cell"; if(key===curKey) cell.className+=" ring-4 ring-indigo-400 rounded-lg";
           var back=document.createElement("div"); back.className="back";
-          if(owner){ back.style.background=teamColor(owner); back.textContent=(qq.artist?qq.artist+" - ":"")+((qq.answer&&qq.answer[0])||""); }
-          else if(key===curKey && clueStage){ back.className="back clueface"; back.textContent=qq.clue||""; }
+          if(owner){ back.style.background=teamColor(owner); back.innerHTML=(qq.artist?'<div class="bk-art">'+esc(qq.artist)+'</div>':'')+'<div class="bk-ttl">'+esc((qq.answer&&qq.answer[0])||"")+'</div>'; }
+          else if(key===curKey && clueStage){ back.className="back clueface"; back.textContent=qq.clue||""; if(qq.clueColor) back.style.color=qq.clueColor; }
           else if(isUsed){ back.style.background="rgba(0,0,0,.10)"; }
           else { back.style.background="transparent"; }
           var post=document.createElement("div"); post.className="postit"+(col==="bonus"?" bonus":"");
@@ -165,7 +244,7 @@
       });
       // 연습문제 행 (맨 아래)
       if(pracList.length){
-        var pl=document.createElement("div"); pl.className="lcell practice-l"; pl.textContent="연습문제"; board.appendChild(pl);
+        var pl=document.createElement("div"); pl.className="lcell practice-l"; pl.textContent="연습"; board.appendChild(pl);
         for(var pi=0; pi<COLS.length; pi++){
           if(pi<pracList.length){
             var pkey=r.id+"|__practice__|"+pi; var pUsed=!!(used[pkey]||owners[pkey]);
@@ -174,16 +253,18 @@
             if(pkey===curKey && clueStage){ pback.className="back clueface"; pback.textContent=pracList[pi].clue||""; }
             else if(pUsed){ pback.style.background="rgba(0,0,0,.10)"; }
             else { pback.style.background="transparent"; }
-            var ppost=document.createElement("div"); ppost.className="postit practice"; ppost.textContent="연습 "+(pi+1);
+            var ppost=document.createElement("div"); ppost.className="postit practice";
             if(pUsed){ applyPeel(ppost,pkey); }
             pcell.appendChild(pback); pcell.appendChild(ppost); board.appendChild(pcell);
           } else { var sp=document.createElement("div"); sp.className="cell"; sp.style.visibility="hidden"; board.appendChild(sp); }
         }
       }
+      requestAnimationFrame(function(){ board.querySelectorAll(".cell .back").forEach(function(b){ if(b.querySelector(".bk-ttl")) fitText(b,11); }); });
+      emoji(board);
       prevOwners=Object.assign({},owners); prevUsed=Object.assign({},used); booted=true;
     }
 
-    var lastCellKey="", lastReveal=-1, lastStage="", revealKey="", revealTimer=null, peelStart={};
+    var lastCellKey="", lastReveal=-1, lastStage="", lastMission=false, lastPaused=false, lastSig="", revealKey="", revealTimer=null, peelStart={};
     function buildProblem(info){
       var body=document.getElementById("qBody"); body.innerHTML=""; var q=info.q;
       if(q.type==="music"){ body.appendChild(musicView()); setupMusic(q); }
@@ -199,35 +280,63 @@
         body.appendChild(img);
       }
     }
+    function setAnsReward(info){
+      var ar=document.getElementById("ansReward"); if(!ar) return; var q=info.q;
+      if(info.points==="bonus"){
+        ar.innerHTML='<div class="arname">🎁 '+esc(q.benefit||"특별 보상")+'</div>'+
+          (q.benefitMission?('<div class="rmission"><span class="rmtag">미션</span> '+esc(q.benefitMission)+'</div>'):'');
+        ar.classList.remove("hidden"); emoji(ar);
+      } else { ar.classList.add("hidden"); ar.innerHTML=""; }
+    }
+    function hideAnsReward(){ var ar=document.getElementById("ansReward"); if(ar){ ar.classList.add("hidden"); ar.innerHTML=""; } }
+    function buildReward(info){
+      var body=document.getElementById("qBody"); body.innerHTML=""; stopMusic(); var q=info.q;
+      var name=q.benefit||"특별 보상"; var desc=q.benefitDesc||""; var mission=q.benefitMission||"";
+      var showMission=!!(state.current&&state.current.mission);
+      var html='<div class="rewardWrap">'+
+        '<div class="rlabel">🎁 특별 보상</div>'+
+        '<div class="rname">'+esc(name)+'</div>'+
+        (desc?('<div class="rdesc">'+esc(desc)+'</div>'):'')+
+        ((mission&&showMission)?('<div class="rmission"><span class="rmtag">미션</span> '+esc(mission)+'</div>'):'')+'</div>';
+      body.innerHTML=html; emoji(body);
+    }
     function buildAnswer(info){
       var body=document.getElementById("qBody"); body.innerHTML=""; var q=info.q; stopMusic();
       var ansTxt=(q.answer&&q.answer[0])||"";
-      var ben=q.benefit?('<div class="mt-6 text-4xl font-black text-amber-300" style="text-shadow:0 3px 14px rgba(0,0,0,.9)">🎁 '+esc(q.benefit)+'</div>'):'';
+      var isBonusAns=(info.points==="bonus");
+      var ben = isBonusAns
+        ? ('<div class="mt-5" style="text-align:center">'
+           +'<div style="font-size:clamp(1.4rem,3.4vw,2.4rem);font-weight:900;color:#ffe08a;text-shadow:0 3px 14px rgba(0,0,0,.9)">🎁 '+esc(q.benefit||"특별 보상")+'</div>'
+           + (q.benefitMission?('<div class="rmission" style="margin-top:6px"><span class="rmtag">미션</span> '+esc(q.benefitMission)+'</div>'):'')
+           +'</div>')
+        : (q.benefit?('<div class="mt-6 text-4xl font-black text-amber-300" style="text-shadow:0 3px 14px rgba(0,0,0,.9)">🎁 '+esc(q.benefit)+'</div>'):'');
       if(q.type==="music"){
         var aid=q.ansYoutubeId||q.youtubeId||""; var ast=parseInt(q.ansStart,10)||0;
-        var html='<div class="ansBox mb-5" style="text-shadow:0 3px 12px rgba(0,0,0,.8)"><div class="alabel">정답</div>'+(q.artist?('<div class="aartist">'+esc(q.artist)+'</div>'):'')+'<div class="aval">'+esc(ansTxt)+'</div></div>';
-        if(aid){ html+='<iframe width="900" height="506" style="max-width:88vw;max-height:52vh;border-radius:16px;border:0" src="https://www.youtube.com/embed/'+encodeURIComponent(aid)+'?start='+ast+'&autoplay=1&rel=0" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>'; }
+        var bonusBlock = isBonusAns ? ('<div class="mb-4" style="text-align:center"><div style="font-size:clamp(1.3rem,3.2vw,2.2rem);font-weight:900;color:#ffe08a;text-shadow:0 3px 14px rgba(0,0,0,.9)">🎁 '+esc(q.benefit||"특별 보상")+'</div>'+(q.benefitMission?('<div class="rmission" style="margin-top:6px"><span class="rmtag">미션</span> '+esc(q.benefitMission)+'</div>'):'')+'</div>') : '';
+        var html='<div class="ansBox mb-4" style="text-shadow:0 3px 12px rgba(0,0,0,.8)"><div class="alabel">정답</div>'+(q.artist?('<div class="aartist">'+esc(q.artist)+'</div>'):'')+'<div class="aval">'+esc(ansTxt)+'</div></div>'+bonusBlock;
+        if(aid){ html+='<iframe width="900" height="506" style="max-width:82vw;max-height:36vh;border-radius:16px;border:0" src="https://www.youtube.com/embed/'+encodeURIComponent(aid)+'?start='+ast+'&autoplay=1&rel=0" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>'; }
         else { html+='<div class="text-white/40">정답 영상 링크 준비 중</div>'; }
-        body.innerHTML=html+ben;
+        body.innerHTML=html; emoji(body); hideAnsReward();
       } else {
         if(q.image){ var img=document.createElement("img"); img.src=q.image; img.className="max-h-[52vh] max-w-full rounded-2xl object-contain"; body.appendChild(img); }
         var d=document.createElement("div"); d.className="ansBox mt-5"; d.style.textShadow="0 3px 12px rgba(0,0,0,.8)"; d.innerHTML='<div class="alabel">정답</div>'+(q.artist?'<div class="aartist"></div>':'')+'<div class="aval"></div>'; if(q.artist)d.querySelector(".aartist").textContent=q.artist; d.querySelector(".aval").textContent=ansTxt; body.appendChild(d);
-        if(q.benefit){ var bd=document.createElement("div"); bd.className="mt-6 text-4xl font-black text-amber-300"; bd.style.textShadow="0 3px 14px rgba(0,0,0,.9)"; bd.textContent="🎁 "+q.benefit; body.appendChild(bd); }
+        if(!isBonusAns && q.benefit){ var bd=document.createElement("div"); bd.className="mt-6 text-4xl font-black text-amber-300"; bd.style.textShadow="0 3px 14px rgba(0,0,0,.9)"; bd.textContent="🎁 "+q.benefit; body.appendChild(bd); }
+        emoji(body);
       }
     }
     function renderCurrent(){
       var cur=state.current||{}; var ov=document.getElementById("qOverlay");
-      if(!cur.cellKey){ ov.classList.add("hidden"); ov.classList.remove("flex"); ov.classList.remove("clue-mode"); stopMusic(); document.getElementById("qBody").innerHTML=""; lastCellKey=""; lastReveal=-1; lastStage=""; clearTimeout(revealTimer); revealKey=""; return; }
+      if(!cur.cellKey){ ov.classList.add("hidden"); ov.classList.remove("flex"); ov.classList.remove("clue-mode"); stopMusic(); hideAnsReward(); document.getElementById("qBody").innerHTML=""; lastCellKey=""; lastReveal=-1; lastStage=""; clearTimeout(revealTimer); revealKey=""; return; }
       var info=findQuestion(cur.cellKey); if(!info) return;
       var isNew=(cur.cellKey!==lastCellKey);
-      var show=!!cur.show, ans=!!cur.answer;
-      var stage = (!show && !ans) ? "clue" : (ans ? "answer" : "problem");
-      document.getElementById("qMeta").textContent=info.cat.name+" · "+(info.points==="bonus"?"보너스":info.points+"점");
+      var show=!!cur.show, ans=!!cur.answer, rew=!!cur.reward, mis=!!cur.mission;
+      var stage = (!show && !rew && !ans) ? "clue" : (ans ? "answer" : (rew ? "reward" : "problem"));
+      document.getElementById("qMeta").textContent=(info.points==="practice")?info.cat.name:(info.cat.name+" · "+(info.points==="bonus"?"보너스":info.points+"점"));
       var clueEl=document.getElementById("qClue");
-      if(info.q.clue && !ans){ clueEl.innerHTML='<div class="clabel">제시어</div><div class="cval"></div>'; clueEl.querySelector(".cval").textContent=info.q.clue; clueEl.classList.remove("hidden","big","small");
+      if(info.q.clue && !ans && !rew){ clueEl.innerHTML='<div class="clabel">제시어</div><div class="cval"></div>'; var _cv=clueEl.querySelector(".cval"); _cv.textContent=info.q.clue; _cv.style.color=info.q.clueColor||""; emoji(clueEl); clueEl.classList.remove("hidden","big","small");
         var smallClue = show && (info.q.type==="image"||info.q.type==="zoom"||info.q.type==="scene");
-        clueEl.classList.add(smallClue?"small":"big"); }
-      else { clueEl.classList.add("hidden"); }
+        clueEl.classList.add(smallClue?"small":"big"); clueEl.style.display="flex"; }
+      else { clueEl.classList.add("hidden"); clueEl.style.display="none"; }
       if(stage==="clue"){
         ov.classList.add("clue-mode");
         if(revealKey!==cur.cellKey){
@@ -239,14 +348,17 @@
         ov.classList.remove("clue-mode"); clearTimeout(revealTimer); revealKey="";
         ov.classList.remove("hidden"); ov.classList.add("flex");
       }
-      if(isNew || stage!==lastStage){
-        if(stage==="clue"){ stopMusic(); document.getElementById("qBody").innerHTML=""; }
-        else if(stage==="problem"){ buildProblem(info); }
+      if(isNew || stage!==lastStage || (stage==="reward" && mis!==lastMission)){
+        if(stage==="clue"){ stopMusic(); hideAnsReward(); document.getElementById("qBody").innerHTML=""; }
+        else if(stage==="problem"){ hideAnsReward(); buildProblem(info); }
+        else if(stage==="reward"){ hideAnsReward(); buildReward(info); }
         else { buildAnswer(info); }
         lastReveal=-1;
       }
-      if(info.q.type==="music" && stage==="problem" && cur.reveal!==lastReveal) playReveal(info.q, cur.reveal);
-      lastCellKey=cur.cellKey; lastReveal=cur.reveal; lastStage=stage;
+      var _sig=(cur.revealTick||0)+":"+(cur.reveal||0);
+      if(info.q.type==="music" && stage==="problem" && _sig!==lastSig && (cur.reveal||0)>0) playReveal(info.q, cur.reveal);
+      if(ytReady && !!cur.paused!==lastPaused){ if(cur.paused){ clearTimeout(pauseTimer); try{ytPlayer.pauseVideo();}catch(e){} } else { try{ytPlayer.playVideo();}catch(e){} } lastPaused=!!cur.paused; }
+      lastCellKey=cur.cellKey; lastReveal=cur.reveal; lastSig=_sig; lastStage=stage; lastMission=mis;
     }
 
     function retriggerGrow(){ var el=document.getElementById("qClue"); if(!el)return; el.classList.remove("grow"); void el.offsetWidth; el.classList.add("grow"); }
@@ -270,20 +382,26 @@
     function setupMusic(q){ if(!ytReady)return; try{ ytPlayer.loadVideoById({videoId:q.youtubeId,startSeconds:q.start||0}); ytPlayer.pauseVideo(); }catch(e){} }
     function playReveal(q,reveal){
       if(!ytReady)return; clearTimeout(pauseTimer);
-      var label=document.getElementById("revealLabel"); var dur=0;
-      if(reveal===1)dur=300; else if(reveal===2)dur=1000; else if(reveal===3)dur=3000; else if(reveal===4)dur=5000; else if(reveal>=5)dur=0;
+      var label=document.getElementById("revealLabel");
+      var durMs = reveal===1?300:reveal===2?1000:reveal===3?3000:reveal===4?5000:0;
       if(reveal<=0){ try{ytPlayer.pauseVideo();}catch(e){} if(label)label.textContent=""; return; }
-      try{ ytPlayer.seekTo(q.start||0,true); ytPlayer.playVideo(); }catch(e){}
+      var startS=q.start||0;
+      try{ ytPlayer.unMute(); ytPlayer.seekTo(startS,true); ytPlayer.playVideo(); }catch(e){}
       if(label) label.textContent=reveal===1?"0.3초":reveal===2?"1초":reveal===3?"3초":reveal===4?"5초":"전체 재생";
-      if(dur>0) pauseTimer=setTimeout(function(){ try{ytPlayer.pauseVideo();}catch(e){} },dur);
+      if(durMs>0) pauseTimer=setTimeout(function(){ try{ytPlayer.pauseVideo();}catch(e){} }, durMs);
     }
     function stopMusic(){ clearTimeout(pauseTimer); if(ytReady){ try{ytPlayer.pauseVideo();}catch(e){} } }
-    window.onYouTubeIframeAPIReady=function(){ ytPlayer=new YT.Player("ytHolder",{height:"180",width:"320",playerVars:{controls:0,disablekb:1,modestbranding:1,rel:0},events:{onReady:function(){ytReady=true;}}}); };
-    function loadYT(){ var s=document.createElement("script"); s.src="https://www.youtube.com/iframe_api"; document.head.appendChild(s); }
+    var primePending=false;
+    function firstVid(){ try{ var r=roundById("r2"); var cs=r.categories||[]; for(var i=0;i<cs.length;i++){ var qs=cs[i].questions||{}; for(var k in qs){ if(qs[k]&&qs[k].youtubeId) return qs[k].youtubeId; } } }catch(e){} return ""; }
+    function primePlayer(){ if(!ytReady)return; try{ var fv=firstVid(); if(!fv)return; ytPlayer.mute(); ytPlayer.loadVideoById({videoId:fv,startSeconds:0}); ytPlayer.playVideo(); setTimeout(function(){ try{ ytPlayer.pauseVideo(); ytPlayer.unMute(); }catch(e){} },500); }catch(e){} }
+    window.onYouTubeIframeAPIReady=function(){ ytPlayer=new YT.Player("ytHolder",{height:"120",width:"68",playerVars:{controls:0,disablekb:1,modestbranding:1,rel:0,playsinline:1,fs:0},events:{onReady:function(){ ytReady=true; if(primePending){ primePending=false; primePlayer(); } }}}); };
+    function loadYT(){ if(window.__ytLoading)return; window.__ytLoading=true; var s=document.createElement("script"); s.src="https://www.youtube.com/iframe_api"; document.head.appendChild(s); }
+    loadYT();
 
     document.getElementById("startBtn").addEventListener("click",function(){
       document.getElementById("startOverlay").remove(); loadYT(); try{ audioCtx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){}
-      MoonStore.subscribe(function(s){ state=s||{}; renderScores(); renderBoard(); renderCurrent(); });
+      if(ytReady) primePlayer(); else primePending=true;
+      MoonStore.subscribe(function(s){ state=s||{}; renderScores(); renderBoard(); renderCurrent(); renderFinale(); });
     });
   })();
   </script>

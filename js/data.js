@@ -309,3 +309,175 @@ window.MOONPD_DATA.rounds[0].categories[0].questions[10] = { type:"image", clue:
     {type:"music",clue:"연습문제 ③",answer:["연습곡 3"],artist:"",youtubeId:"",start:0,ansYoutubeId:"",ansStart:0}
   ];
 })();
+// 연습1=QWER 소년만화 / 00년대 보너스=링딩동(유혹의소나타 교체) (2026-09-28)
+(function(){
+  var r2=window.MOONPD_DATA.rounds.find(function(r){return r.id==="r2";});
+  if(r2.practice&&r2.practice[0]) Object.assign(r2.practice[0],{answer:["소년만화"],artist:"QWER",youtubeId:"91YrsgWQcEo",start:0,ansYoutubeId:"91YrsgWQcEo",ansStart:152});
+  var c=r2.categories.find(function(x){return x.id==="c_00";});
+  if(c) c.questions.bonus=Object.assign({},c.questions.bonus,{answer:["링딩동","Ring Ding Dong"],artist:"샤이니",clue:"",youtubeId:"kuW6tfhgaRc",start:0,ansYoutubeId:"roughtzsCDI",ansStart:93});
+})();
+// 1/2라운드 개념 제거 — 음악 문제판 단일 보드만 사용 (반드시 마지막)
+(function(){
+  var d=window.MOONPD_DATA;
+  d.rounds = d.rounds.filter(function(r){return r.id==="r2";});
+  if(d.rounds[0]) d.rounds[0].name="🎵 음악 문제판";
+})();
+// 연습문제 3곡 확정(2026-10-02)
+(function(){
+  var r2=window.MOONPD_DATA.rounds.find(function(r){return r.id==="r2";});
+  var p=r2.practice||[];
+  if(p[0]) Object.assign(p[0],{clue:"연습 ①",answer:["챔피언","Champion"],artist:"싸이",youtubeId:"SR7aiPTvmm0",start:0,ansYoutubeId:"SR7aiPTvmm0",ansStart:49});
+  if(p[1]) Object.assign(p[1],{clue:"연습 ②",answer:["남자를 몰라"],artist:"버즈",youtubeId:"jjuB0S2460Q",start:0,ansYoutubeId:"ZKD7z3TGFXw",ansStart:51});
+  if(p[2]) Object.assign(p[2],{clue:"연습 ③ (OST)",answer:["아베 마리아","천국의 계단"],artist:"천국의 계단 OST",youtubeId:"meHE2_1iMaI",start:0,ansYoutubeId:"meHE2_1iMaI",ansStart:145});
+})();
+// 선물 정답 시작 1:01(2026-10-02)
+(function(){ var r2=window.MOONPD_DATA.rounds.find(function(r){return r.id==="r2";});
+  var c=r2.categories.find(function(x){return x.id==="c_10";});
+  if(c&&c.questions.bonus) c.questions.bonus.ansStart=61;
+})();
+// 보너스 혜택 3단 적용: 깊은 슬픔(2026-10-02)
+(function(){ var r2=window.MOONPD_DATA.rounds.find(function(r){return r.id==="r2";});
+  var c=r2.categories.find(function(x){return x.id==="c_90";});
+  if(c&&c.questions.bonus) Object.assign(c.questions.bonus,{
+    benefit:"더블찬스",
+    benefitDesc:"구호를 외친 후 기회가 주어졌을 때 찬스를 쓰고 정답을 맞추면 2배의 점수 획득, 틀리면 2배의 점수 삭감",
+    benefitMission:"다음 영상을 가장 맛깔나게 따라하는 팀에게 부여"
+  });
+})();
+// 아기상어 슈퍼히어로 정답영상 교체(2026-10-02)
+(function(){ var r2=window.MOONPD_DATA.rounds.find(function(r){return r.id==="r2";});
+  var c=r2.categories.find(function(x){return x.id==="c_ost";});
+  if(c&&c.questions.bonus){ c.questions.bonus.ansYoutubeId="761ae_KDg_Q"; c.questions.bonus.ansStart=26; }
+})();
+// 보너스 혜택 최종 배치(2026-10-02): 더블찬스/감점방지권/우선권/선물권 + 미션
+(function(){
+  var r2=window.MOONPD_DATA.rounds.find(function(r){return r.id==="r2";});
+  function B(cid,patch){ var c=r2.categories.find(function(x){return x.id===cid;}); if(c&&c.questions.bonus) Object.assign(c.questions.bonus,patch); }
+  var D_DBL="찬스를 선언하고 정답을 맞히면 그 문제 점수의 2배 획득, 틀리면 2배 감점";
+  var D_SAFE="이 문제는 맞히면 점수를 획득하고, 틀려도 감점이 없다";
+  var D_PRIO="제시어만 보고 사용을 선언하면 전주 5초를 먼저 듣고, 가장 먼저 정답을 외칠 수 있다";
+  var M_DANCE="정답 영상의 춤을 가장 잘 춘 팀에게 부여 — 전원 투표(본인 팀 투표 불가), 정답을 맞힌 팀은 +2표를 얻은 채 시작";
+  // 아파트 — 더블찬스
+  B("c_pre80",{benefit:"더블찬스",benefitDesc:D_DBL,benefitMission:"아파트 게임 우승자에게 부여"});
+  // 깊은 슬픔 — 우선권 (더블찬스에서 변경)
+  B("c_90",{benefit:"우선권",benefitDesc:D_PRIO,benefitMission:""});
+  // 링딩동 — 감점방지권 (곡 교체 보류)
+  B("c_00",{benefit:"감점방지권",benefitDesc:D_SAFE,benefitMission:""});
+  // 선물 — 선물권 (신규)
+  B("c_10",{benefit:"선물권",
+    benefitDesc:"이 혜택을 가진 팀이 직접 출제자가 됩니다. 다른 팀이 맞히면 우리 팀 점수에서 30점을 그 팀에게 넘겨주고, 진행자가 맞히면 우리 팀이 30점을 받습니다.",
+    benefitMission:""});
+  // 퀸카 — 감점방지권 + 댄스투표
+  B("c_20",{benefit:"감점방지권",benefitDesc:D_SAFE,benefitMission:M_DANCE});
+  // Bad — 더블찬스 + 댄스투표
+  B("c_2026",{benefit:"더블찬스",benefitDesc:D_DBL,benefitMission:M_DANCE});
+  // 캐논 — 감점방지권 (곡 교체 보류)
+  B("c_classic",{benefit:"감점방지권",benefitDesc:D_SAFE,benefitMission:""});
+  // 아기상어 — 우선권 (맞히면 바로)
+  B("c_ost",{benefit:"우선권",benefitDesc:D_PRIO,benefitMission:"정답을 맞힌 팀이 바로 획득"});
+})();
+// 00년대 보너스 링딩동 -> 아브라카다브라(2026-10-02)
+(function(){ var r2=window.MOONPD_DATA.rounds.find(function(r){return r.id==="r2";});
+  var c=r2.categories.find(function(x){return x.id==="c_00";});
+  if(c&&c.questions.bonus) Object.assign(c.questions.bonus,{answer:["아브라카다브라","Abracadabra"],artist:"브라운 아이드 걸스",youtubeId:"o4wJGWcHzVA",start:0,ansYoutubeId:"o4wJGWcHzVA",ansStart:0});
+})();
+// 클래식 보너스 캐논 -> 결혼행진곡(멘델스존), 미션=이행시(2026-10-02)
+(function(){ var r2=window.MOONPD_DATA.rounds.find(function(r){return r.id==="r2";});
+  var c=r2.categories.find(function(x){return x.id==="c_classic";});
+  if(c&&c.questions.bonus) Object.assign(c.questions.bonus,{
+    answer:["결혼행진곡","Wedding March"], artist:"멘델스존",
+    youtubeId:"2vQTgbw0AlM", start:0, ansYoutubeId:"2vQTgbw0AlM", ansStart:0,
+    benefitMission:"'결혼' 두 글자로 이행시 짓기"
+  });
+})();
+// 아파트 보너스 정답영상 -> ROSÉ & Bruno Mars APT. MV (문제는 윤수일 음원 유지)(2026-10-02)
+(function(){ var r2=window.MOONPD_DATA.rounds.find(function(r){return r.id==="r2";});
+  var c=r2.categories.find(function(x){return x.id==="c_pre80";});
+  if(c&&c.questions.bonus){ c.questions.bonus.ansYoutubeId="ekr2nIex040"; c.questions.bonus.ansStart=0; }
+})();
+// 깊은 슬픔 보너스 제시어(2026-10-02)
+(function(){ var r2=window.MOONPD_DATA.rounds.find(function(r){return r.id==="r2";});
+  var c=r2.categories.find(function(x){return x.id==="c_90";});
+  if(c&&c.questions.bonus) c.questions.bonus.clue="밀레니엄";
+})();
+// 보너스 제시어 일괄(2026-10-02)
+(function(){ var r2=window.MOONPD_DATA.rounds.find(function(r){return r.id==="r2";});
+  function CLUE(cid,txt){ var c=r2.categories.find(function(x){return x.id===cid;}); if(c&&c.questions.bonus) c.questions.bonus.clue=txt; }
+  CLUE("c_00","해리포터");       // 아브라카다브라
+  CLUE("c_10","김민규");         // 선물
+  CLUE("c_20","여왕");           // 퀸카
+  CLUE("c_ost","어벤저스");      // 슈퍼히어로 아기상어
+  CLUE("c_classic","김문현 빼고"); // 결혼행진곡
+})();
+// 결혼행진곡 영상 교체(2026-10-02)
+(function(){ var r2=window.MOONPD_DATA.rounds.find(function(r){return r.id==="r2";});
+  var c=r2.categories.find(function(x){return x.id==="c_classic";});
+  if(c&&c.questions.bonus){ var b=c.questions.bonus; b.youtubeId="1YtHotXNBLs"; b.start=0; b.ansYoutubeId="1YtHotXNBLs"; b.ansStart=0; }
+})();
+// Blinding Lights 제시어 캐나다 국기(2026-10-02)
+(function(){ var r2=window.MOONPD_DATA.rounds.find(function(r){return r.id==="r2";});
+  var c=r2.categories.find(function(x){return x.id==="c_20";});
+  if(c&&c.questions[20]) c.questions[20].clue="🇨🇦";
+})();
+// 블루 발렌타인 제시어 파란색(2026-10-02)
+(function(){ var r2=window.MOONPD_DATA.rounds.find(function(r){return r.id==="r2";});
+  var c=r2.categories.find(function(x){return x.id==="c_2026";});
+  if(c&&c.questions[20]) c.questions[20].clueColor="#2563eb";
+})();
+// 붉은 노을 제시어 -> 빅뱅(2026-10-02)
+(function(){ var r2=window.MOONPD_DATA.rounds.find(function(r){return r.id==="r2";});
+  var c=r2.categories.find(function(x){return x.id==="c_pre80";});
+  if(c&&c.questions[30]) c.questions[30].clue="빅뱅";
+})();
+// 러브어택 제시어 -> 야호(2026-10-02)
+(function(){ var r2=window.MOONPD_DATA.rounds.find(function(r){return r.id==="r2";});
+  var c=r2.categories.find(function(x){return x.id==="c_20";});
+  if(c&&c.questions[30]) c.questions[30].clue="야호";
+})();
+// 기억의 습작 제시어 -> 건축(2026-10-02)
+(function(){ var r2=window.MOONPD_DATA.rounds.find(function(r){return r.id==="r2";});
+  var c=r2.categories.find(function(x){return x.id==="c_90";});
+  if(c&&c.questions[40]) c.questions[40].clue="건축";
+})();
+// Blinding Lights 문제 영상 교체(2026-10-02)
+(function(){ var r2=window.MOONPD_DATA.rounds.find(function(r){return r.id==="r2";});
+  var c=r2.categories.find(function(x){return x.id==="c_20";});
+  if(c&&c.questions[20]){ c.questions[20].youtubeId="4NRXx6U8ABQ"; c.questions[20].start=0; }
+})();
+// 어머나 문제 영상 교체(2026-10-02)
+(function(){ var r2=window.MOONPD_DATA.rounds.find(function(r){return r.id==="r2";});
+  var c=r2.categories.find(function(x){return x.id==="c_00";});
+  if(c&&c.questions[40]){ c.questions[40].youtubeId="1g5BXEcv5zQ"; c.questions[40].start=0; }
+})();
+// 사건의지평선 제시어 블랙홀 + 신세계 정답명 '신세계로부터' 우선(2026-10-02)
+(function(){ var r2=window.MOONPD_DATA.rounds.find(function(r){return r.id==="r2";});
+  var c20=r2.categories.find(function(x){return x.id==="c_20";});
+  if(c20&&c20.questions[40]) c20.questions[40].clue="블랙홀";
+  var cc=r2.categories.find(function(x){return x.id==="c_classic";});
+  if(cc&&cc.questions[40]) cc.questions[40].answer=["신세계로부터","신세계 교향곡","교향곡 9번 신세계로부터"];
+})();
+// 신세계 문제 링크 교체(공식영상 재생불가 -> 삼호뮤직)(2026-10-02)
+(function(){ var r2=window.MOONPD_DATA.rounds.find(function(r){return r.id==="r2";});
+  var c=r2.categories.find(function(x){return x.id==="c_classic";});
+  if(c&&c.questions[40]){ c.questions[40].youtubeId="LiQeS3saDu0"; c.questions[40].start=0; }
+})();
+// 신세계 문제 링크 t3CkozkutRg 8초부터(2026-10-02)
+(function(){ var r2=window.MOONPD_DATA.rounds.find(function(r){return r.id==="r2";});
+  var c=r2.categories.find(function(x){return x.id==="c_classic";});
+  if(c&&c.questions[40]){ c.questions[40].youtubeId="t3CkozkutRg"; c.questions[40].start=8; }
+})();
+// 어느 60대 노부부 이야기 제시어 -> 노부부 이모지(2026-10-02)
+(function(){ var r2=window.MOONPD_DATA.rounds.find(function(r){return r.id==="r2";});
+  var c=r2.categories.find(function(x){return x.id==="c_pre80";});
+  if(c&&c.questions[50]) c.questions[50].clue="👴👵";
+})();
+// 캐치캐치 문제영상 교체(2026-10-02)
+(function(){ var r2=window.MOONPD_DATA.rounds.find(function(r){return r.id==="r2";});
+  var c=r2.categories.find(function(x){return x.id==="c_2026";});
+  if(c&&c.questions[50]){ c.questions[50].youtubeId="VtBZhsuqoWc"; c.questions[50].start=0; }
+})();
+// 캐치캐치 제시어 -> 33기 광수(2026-10-02)
+(function(){ var r2=window.MOONPD_DATA.rounds.find(function(r){return r.id==="r2";});
+  var c=r2.categories.find(function(x){return x.id==="c_2026";});
+  if(c&&c.questions[50]) c.questions[50].clue="33기 광수";
+})();
